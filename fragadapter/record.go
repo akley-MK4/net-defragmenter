@@ -3,6 +3,7 @@ package fragadapter
 import (
 	def "github.com/akley-MK4/net-defragmenter/definition"
 	"log"
+	"runtime/debug"
 	"sync"
 	"time"
 )
@@ -84,6 +85,12 @@ func (t *AdapterRecord) reassemblyCapturedBuf(fullPkt *def.FullPacket) {
 	pkt := fullPkt.GetPacket()
 	pktData := pkt.Data()
 	fullPkt.Pkt = nil
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Catch ReassemblyCompletedCallback exception, Recover: %v, Stack: %v", r, string(debug.Stack()))
+		}
+	}()
 
 	t.inst.ReassemblyCompletedCallback(info.Timestamp, info.IfIndex, pktData)
 }

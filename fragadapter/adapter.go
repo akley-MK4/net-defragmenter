@@ -57,7 +57,7 @@ func InitializeAdapterInstance() error {
 	}
 
 	adapterInstance = inst
-	log.Println("AdapterInstance initialization successful")
+	log.Println("[info][DeFragmentAdapter] AdapterInstance initialization successful")
 	return nil
 }
 
@@ -146,7 +146,7 @@ func (t *DeFragmentAdapter) RegisterInstance(inst IAdapterInstance) (retId Adapt
 	t.incRecordId += 1
 	retId = t.incRecordId
 	t.recordMap[retId] = NewAdapterRecord(retId, inst)
-	log.Printf("Registered a new PCAP instance, RecordId: %v\n", retId)
+	log.Printf("[info][DeFragmentAdapter] Registered a new PCAP instance, RecordId: %v\n", retId)
 
 	return
 }
@@ -156,6 +156,7 @@ func (t *DeFragmentAdapter) DeregisterInstance(id AdapterRecordIdType) {
 	delInstRecord, exist := t.recordMap[id]
 	if !exist {
 		t.rwMutex.Unlock()
+		log.Printf("[warning][DeFragmentAdapter] Deregister failed, The record %v dose not exists\n", id)
 		return
 	}
 
@@ -163,7 +164,7 @@ func (t *DeFragmentAdapter) DeregisterInstance(id AdapterRecordIdType) {
 	t.rwMutex.Unlock()
 
 	delInstRecord.release()
-	log.Printf("Deregistered a new PCAP instance, RecordId: %v\n", id)
+	log.Printf("[info][DeFragmentAdapter] Deregistered instance with RecordId %v\n", id)
 }
 
 func (t *DeFragmentAdapter) AsyncProcessPacket(id AdapterRecordIdType, timestamp time.Time, ifIndex int, buf []byte) bool {
@@ -171,7 +172,7 @@ func (t *DeFragmentAdapter) AsyncProcessPacket(id AdapterRecordIdType, timestamp
 	record := t.recordMap[id]
 	t.rwMutex.RUnlock()
 	if record == nil {
-		log.Printf("[warning][CheckAndDeliverPacket] The record %v dose not exists\n", id)
+		log.Printf("[warning][DeFragmentAdapter] AsyncProcessPacket failed, The record %v dose not exists\n", id)
 		return false
 	}
 
@@ -181,7 +182,7 @@ func (t *DeFragmentAdapter) AsyncProcessPacket(id AdapterRecordIdType, timestamp
 		record.associateCapturedInfo(fragGroupID, timestamp, ifIndex)
 	})
 	if processErr != nil {
-		log.Printf("[warning][CheckAndDeliverPacket] FilterAndDeliverPacket error, %v\n", processErr)
+		log.Printf("[warning][DeFragmentAdapter] AsyncProcessPacket failed, %v\n", processErr)
 		return false
 	}
 
@@ -194,7 +195,7 @@ func (t *DeFragmentAdapter) listenReassemblyCompleted() {
 
 		fullPktList, popErr := t.lib.PopFullPackets(maxPullFullPacketsNum)
 		if popErr != nil {
-			log.Printf("[warning][listenReassemblyCompleted] PopFullPackets error, %v\n", popErr)
+			log.Printf("[warning][DeFragmentAdapter] Call listenReassemblyCompleted failed, PopFullPackets error, %v\n", popErr)
 			continue
 		}
 		if len(fullPktList) <= 0 {
@@ -205,7 +206,7 @@ func (t *DeFragmentAdapter) listenReassemblyCompleted() {
 			recordId := AdapterRecordIdType(pkt.GetInMarkValue())
 			record := t.getRecord(recordId)
 			if record == nil {
-				log.Printf("[warning][listenReassemblyCompleted] The record %v dose not exists\n", pkt.GetInMarkValue())
+				log.Printf("[warning][DeFragmentAdapter] Call listenReassemblyCompleted failed, The record %v dose not exists\n", pkt.GetInMarkValue())
 				continue
 			}
 

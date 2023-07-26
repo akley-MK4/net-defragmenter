@@ -8,6 +8,7 @@ import (
 	"github.com/akley-MK4/net-defragmenter/internal/ctrlapi"
 	"github.com/akley-MK4/net-defragmenter/internal/detection"
 	"github.com/akley-MK4/net-defragmenter/libstats"
+	"runtime/debug"
 	"sync/atomic"
 )
 
@@ -72,10 +73,16 @@ func (t *Manager) Stop() {
 	t.collectorMgr.Stop()
 }
 
-func (t *Manager) AsyncProcessPacket(pktBuf []byte, inMarkValue uint64, onDetectSuccessful def.OnDetectSuccessfulFunc) error {
+func (t *Manager) AsyncProcessPacket(pktBuf []byte, inMarkValue uint64, onDetectSuccessful def.OnDetectSuccessfulFunc) (retErr error) {
 	if t.status != def.StartedStatus {
 		return fmt.Errorf("manager not started, current status is %v", t.status)
 	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			retErr = fmt.Errorf("catch AsyncProcessPacket exception, Recover: %v, Stack: %v", r, string(debug.Stack()))
+		}
+	}()
 
 	libstats.AddTotalReceivedPktNum(1)
 	var detectInfo def.DetectionInfo
