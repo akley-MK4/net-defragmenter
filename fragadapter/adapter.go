@@ -1,9 +1,14 @@
 package fragadapter
 
 import (
+	"encoding/json"
+	"fmt"
 	def "github.com/akley-MK4/net-defragmenter/definition"
+	"github.com/akley-MK4/net-defragmenter/libstats"
 	"github.com/akley-MK4/net-defragmenter/manager"
 	"log"
+	"os"
+	"runtime/debug"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -23,8 +28,11 @@ const (
 )
 
 const (
-	maxPullFullPacketsNum = 5000
-	popPullPktInterval    = time.Second * time.Duration(2)
+	maxPullFullPacketsNum      = 5000
+	popPullPktInterval         = time.Second * time.Duration(3)
+	enableStatsFile            = true
+	intervalUpdateStatsFileMin = 3
+	statsFilePath              = "/tmp/vtap_defragment.json"
 )
 
 type AdapterRecordIdType uint64
@@ -67,7 +75,7 @@ func GetAdapterInstance() *DeFragmentAdapter {
 
 func NewDeFragmentAdapter() (*DeFragmentAdapter, error) {
 	opt := def.NewOption(func(opt *def.Option) {
-		opt.CtrlApiServerOption.Enable = true
+		//opt.CtrlApiServerOption.Enable = true
 		opt.CtrlApiServerOption.Port = 11793
 
 		opt.StatsOption.Enable = true
@@ -108,6 +116,9 @@ func (t *DeFragmentAdapter) Start() {
 
 	t.lib.Start()
 	go t.listenReassemblyCompleted()
+	if enableStatsFile {
+		go updateStatsFilePeriodically()
+	}
 }
 
 func (t *DeFragmentAdapter) Stop() {
@@ -213,4 +224,48 @@ func (t *DeFragmentAdapter) listenReassemblyCompleted() {
 			record.reassemblyCapturedBuf(pkt)
 		}
 	}
+}
+
+func updateStatsFilePeriodically() {
+	interval := time.Minute * intervalUpdateStatsFileMin
+	for {
+		time.Sleep(interval)
+		if err := updateStatsFile(); err != nil {
+			log.Printf("[warning][DeFragmentAdapter] updateStatsFilePeriodically failed, %v\n", err)
+		}
+	}
+}
+
+func updateStatsFile() (retErr error) {
+	defer func() {
+		if r := recover(); r != nil {
+			retErr = fmt.Errorf("catch updateStatsFile exception, Recover: %v, Stack: %v", r, string(debug.Stack()))
+		}
+	}()
+
+	f, openErr := os.OpenFile(statsFilePath, os.O_CREATE|os.O_RDWR, os.ModePerm)
+	if openErr != nil {
+		retErr = openErr
+		return
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			retErr = err
+		}
+	}()
+
+	statsData := libstats.GetStatsMgr()
+	d, marshalErr := json.Marshal(statsData)
+	if marshalErr != nil {
+		retErr = marshalErr
+		return
+	}
+
+	_, writeErr := f.Write(d)
+	if writeErr != nil {
+		retErr = writeErr
+		return
+	}
+
+	return
 }
