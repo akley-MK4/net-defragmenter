@@ -20,7 +20,7 @@ The instance of the library is related, and this instance is exposed to users fo
 
 ## Simple Test Report Reference
 ### Performance
-In a CPU @ 3.20GHz 3.19 GHz 4 threads environment, processing a pcap file with 102146 packets took 600 milliseconds, and restructuring 61277 fragments of the file took 300 milliseconds.
+In a CPU @ 3.20GHz 3.19 GHz 4 threads environment, processing a pcap file with 102146 packets took 473 milliseconds, and restructuring 61277 fragments of the file took 458 milliseconds.
 
 ### Stats
 The description will be supplemented later.
