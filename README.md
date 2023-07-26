@@ -1,7 +1,7 @@
 # net-defragmenter
 ## Introduction
 This is a network fragmentation reassembly library that now supports fragments of IPV4 and IPV6 types.  
-By fast detecting data packets (without copying memory and using 'gopacket.NewPacket'), balancing group collection, 
+By fast detecting data packets (do not copy memory, do not use 'gopacket.NewPacket'), balancing group collection, 
 concurrent defragmentation, object reuse, and other operations,  
 a good level of performance can be achieved.
 ## Directory structure description
