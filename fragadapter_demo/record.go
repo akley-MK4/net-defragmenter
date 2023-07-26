@@ -1,4 +1,4 @@
-package fragadapter
+package fragadapter_demo
 
 import (
 	def "github.com/akley-MK4/net-defragmenter/definition"

@@ -1,4 +1,4 @@
-package fragadapter
+package fragadapter_demo
 
 import (
 	"encoding/json"

@@ -1,7 +1,7 @@
 package example
 
 import (
-	"github.com/akley-MK4/net-defragmenter/fragadapter"
+	"github.com/akley-MK4/net-defragmenter/fragadapter_demo"
 	"log"
 	"time"
 )
@@ -16,7 +16,7 @@ var (
 )
 
 type simulationInstance struct {
-	recordId fragadapter.AdapterRecordIdType
+	recordId fragadapter_demo.AdapterRecordIdType
 }
 
 func (t *simulationInstance) ReassemblyCompletedCallback(timestamp time.Time, ifIndex int, buf []byte) {
@@ -25,28 +25,28 @@ func (t *simulationInstance) ReassemblyCompletedCallback(timestamp time.Time, if
 }
 
 func LaunchBasicDemo() {
-	newAdapterErr := fragadapter.InitializeAdapterInstance()
+	newAdapterErr := fragadapter_demo.InitializeAdapterInstance()
 	if newAdapterErr != nil {
 		log.Printf("NewDeFragmentAdapter failed, %v\n", newAdapterErr)
 		return
 	}
 
-	fragadapter.GetAdapterInstance().Start()
+	fragadapter_demo.GetAdapterInstance().Start()
 
 	inst1 := &simulationInstance{}
-	inst1.recordId = fragadapter.GetAdapterInstance().RegisterInstance(inst1)
+	inst1.recordId = fragadapter_demo.GetAdapterInstance().RegisterInstance(inst1)
 	inst2 := &simulationInstance{}
-	inst2.recordId = fragadapter.GetAdapterInstance().RegisterInstance(inst2)
+	inst2.recordId = fragadapter_demo.GetAdapterInstance().RegisterInstance(inst2)
 
 	tp := time.Now()
 	ifIdx := 1
-	fragadapter.GetAdapterInstance().AsyncProcessPacket(inst1.recordId, tp, ifIdx, IPv4Frag1)
-	fragadapter.GetAdapterInstance().AsyncProcessPacket(inst1.recordId, tp, ifIdx, IPv4Frag2)
-	fragadapter.GetAdapterInstance().AsyncProcessPacket(inst1.recordId, tp, ifIdx, IPv4Frag3)
+	fragadapter_demo.GetAdapterInstance().AsyncProcessPacket(inst1.recordId, tp, ifIdx, IPv4Frag1)
+	fragadapter_demo.GetAdapterInstance().AsyncProcessPacket(inst1.recordId, tp, ifIdx, IPv4Frag2)
+	fragadapter_demo.GetAdapterInstance().AsyncProcessPacket(inst1.recordId, tp, ifIdx, IPv4Frag3)
 
 	time.Sleep(time.Second * 5)
 
-	fragadapter.GetAdapterInstance().DeregisterInstance(inst1.recordId)
+	fragadapter_demo.GetAdapterInstance().DeregisterInstance(inst1.recordId)
 	for {
 		time.Sleep(time.Second * 2)
 	}
