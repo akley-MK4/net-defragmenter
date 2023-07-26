@@ -46,7 +46,7 @@ func LaunchBasicDemo() {
 
 	time.Sleep(time.Second * 5)
 
-	fragadapter.GetAdapterInstance().UnregisterInstance(inst1.recordId)
+	fragadapter.GetAdapterInstance().DeregisterInstance(inst1.recordId)
 	for {
 		time.Sleep(time.Second * 2)
 	}

@@ -57,6 +57,7 @@ func InitializeAdapterInstance() error {
 	}
 
 	adapterInstance = inst
+	log.Println("AdapterInstance initialization successful")
 	return nil
 }
 
@@ -150,12 +151,15 @@ func (t *DeFragmentAdapter) RegisterInstance(inst IAdapterInstance) (retId Adapt
 	return
 }
 
-func (t *DeFragmentAdapter) UnregisterInstance(id AdapterRecordIdType) {
+func (t *DeFragmentAdapter) DeregisterInstance(id AdapterRecordIdType) {
 	t.rwMutex.Lock()
 	delInstRecord, exist := t.recordMap[id]
-	if exist {
-		delete(t.recordMap, id)
+	if !exist {
+		t.rwMutex.Unlock()
+		return
 	}
+
+	delete(t.recordMap, id)
 	t.rwMutex.Unlock()
 
 	delInstRecord.release()
@@ -163,8 +167,6 @@ func (t *DeFragmentAdapter) UnregisterInstance(id AdapterRecordIdType) {
 }
 
 func (t *DeFragmentAdapter) AsyncProcessPacket(id AdapterRecordIdType, timestamp time.Time, ifIndex int, buf []byte) bool {
-	//log.Printf("[debug][CheckAndDeliverPacket], id=%v, timestamp=%v, ifIndex=%v, bufLen=%d\n",
-	//	id, timestamp, ifIndex, len(buf))
 	t.rwMutex.RLock()
 	record := t.recordMap[id]
 	t.rwMutex.RUnlock()
@@ -172,10 +174,6 @@ func (t *DeFragmentAdapter) AsyncProcessPacket(id AdapterRecordIdType, timestamp
 		log.Printf("[warning][CheckAndDeliverPacket] The record %v dose not exists\n", id)
 		return false
 	}
-
-	//fragGroupID, err := t.lib.AsyncProcessPacket(buf, uint64(record.id), func(clsData *definition.FragmentInfo) {
-	//	record.associateCapturedInfo(fragGroupID, timestamp, ifIndex)
-	//})
 
 	var fragGroupID def.FragmentGroupID
 	var processErr error
@@ -187,11 +185,7 @@ func (t *DeFragmentAdapter) AsyncProcessPacket(id AdapterRecordIdType, timestamp
 		return false
 	}
 
-	if fragGroupID == "" {
-		return false
-	}
-
-	return true
+	return fragGroupID != ""
 }
 
 func (t *DeFragmentAdapter) listenReassemblyCompleted() {

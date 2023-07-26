@@ -112,8 +112,8 @@ func LaunchDemoWithPcapReply(pcapFilePath string) {
 	fmt.Println()
 
 	log.Println("Start unregistering simulation instances")
-	fragadapter.GetAdapterInstance().UnregisterInstance(inst1.recordId)
-	fragadapter.GetAdapterInstance().UnregisterInstance(inst2.recordId)
+	fragadapter.GetAdapterInstance().DeregisterInstance(inst1.recordId)
+	fragadapter.GetAdapterInstance().DeregisterInstance(inst2.recordId)
 	log.Println("Canceled the registration of these simulation instances")
 	printMemoryStatus("Memory State")
 	fmt.Println()
