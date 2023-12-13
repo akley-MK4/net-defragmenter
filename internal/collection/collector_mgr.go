@@ -85,21 +85,23 @@ func (t *CollectorMgr) Stop() {
 	}
 }
 
-func (t *CollectorMgr) Collect(fragGroupID def.FragGroupID, detectInfo *def.DetectionInfo, inMarkValue uint64) {
+func (t *CollectorMgr) Collect(detectInfo *def.DetectionInfo, userMarkValue uint32) error {
 	statsHandler := stats.GetCollectionStatsHandler()
 	membersLen := len(t.members)
 	if membersLen <= 0 {
 		statsHandler.AddTotalFailedDistributionMemberNum(1)
-		return
+		return errors.New("no member")
 	}
 
 	fragElem := common.NewFragElement()
-	setFragElement(fragElem, detectInfo, fragGroupID, inMarkValue)
+	setFragElement(fragElem, detectInfo, userMarkValue)
 
-	hashVal := crc32.ChecksumIEEE([]byte(fragGroupID))
+	hashVal := crc32.ChecksumIEEE([]byte(detectInfo.FragGroupId))
 	idx := hashVal % uint32(membersLen)
 	mbr := t.members[idx]
 	mbr.pushFragmentElement(fragElem)
+
+	return nil
 }
 
 func (t *CollectorMgr) checkFullPktQueueCapacityPeriodically() {
@@ -118,7 +120,7 @@ func (t *CollectorMgr) checkFullPktQueueCapacityPeriodically() {
 		}
 
 		for _, compPkt := range t.fullPktQueue.SafetyPopValues(releaseCount * 2) {
-			compPkt.(*def.FullPacket).Pkt = nil
+			ReleaseFullPacket(compPkt.(*def.FullPacket))
 			stats.GetCollectionStatsHandler().AddTotalForceReleasedFullPacketsNum(1)
 		}
 	}
@@ -143,12 +145,11 @@ func (t *CollectorMgr) PopFullPackets(count int) ([]*def.FullPacket, error) {
 	return retPktList, nil
 }
 
-func setFragElement(fragElem *common.FragElement, detectInfo *def.DetectionInfo,
-	fragGroupID def.FragGroupID, inMarkValue uint64) {
+func setFragElement(fragElem *common.FragElement, detectInfo *def.DetectionInfo, userMarkValue uint32) {
 
 	fragElem.Type = detectInfo.FragType
-	fragElem.GroupID = fragGroupID
-	fragElem.InMarkValue = inMarkValue
+	fragElem.GroupID = detectInfo.FragGroupId
+	fragElem.UserMarkValue = userMarkValue
 	fragElem.FragOffset = detectInfo.FragOffset
 	fragElem.MoreFrags = detectInfo.MoreFrags
 	fragElem.Identification = detectInfo.Identification
@@ -180,4 +181,14 @@ func setFragElement(fragElem *common.FragElement, detectInfo *def.DetectionInfo,
 	}
 	copy(fragElem.DstIP, detectInfo.DstIP)
 	fragElem.IPProtocol = detectInfo.IPProtocol
+}
+
+func ReleaseFullPacket(fullPkt *def.FullPacket) {
+	if fullPkt == nil {
+		return
+	}
+
+	fullPkt.FragGroupID = ""
+	fullPkt.Pkt = nil
+	stats.GetCollectionStatsHandler().AddTotalReleasedFullPacketsNum(1)
 }

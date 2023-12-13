@@ -2,6 +2,7 @@ package fragadapter_demo
 
 import (
 	def "github.com/akley-MK4/net-defragmenter/definition"
+	"github.com/akley-MK4/net-defragmenter/manager"
 	"log"
 	"runtime/debug"
 	"sync"
@@ -77,14 +78,14 @@ func (t *AdapterRecord) reassemblyCapturedBuf(fullPkt *def.FullPacket) {
 	t.mutex.Unlock()
 
 	if info == nil {
-		fullPkt.Pkt = nil
+		manager.ReleaseFullPacket(fullPkt)
 		log.Printf("[warning][reassemblyPcapBuf] The info with fragGroup %v dose not exists\n", fragGroupID)
 		return
 	}
 
 	pkt := fullPkt.GetPacket()
 	pktData := pkt.Data()
-	fullPkt.Pkt = nil
+	manager.ReleaseFullPacket(fullPkt)
 
 	defer func() {
 		if r := recover(); r != nil {

@@ -11,9 +11,9 @@ import (
 )
 
 type FragElement struct {
-	GroupID     def.FragGroupID
-	Type        def.FragType
-	InMarkValue uint64
+	GroupID       def.FragGroupID
+	Type          def.FragType
+	UserMarkValue uint32
 
 	SrcMAC, DstMAC []byte
 	SrcIP, DstIP   []byte

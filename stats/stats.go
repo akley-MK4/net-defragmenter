@@ -13,13 +13,13 @@ func DisableStats() {
 }
 
 type Stats struct {
-	Manager    ManagerStats
+	//Manager    ManagerStats
 	Detection  DetectionStats
 	Collection CollectionStats
 }
 
 func GetStats() (retStats Stats) {
-	retStats.Manager = GetManagerStatsHandler().getStats()
+	//retStats.Manager = GetManagerStatsHandler().getStats()
 	retStats.Detection = GetDetectionStatsHandler().getStats()
 	retStats.Collection = GetCollectionStatsHandler().getStats()
 	return

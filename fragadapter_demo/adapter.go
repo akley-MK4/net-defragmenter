@@ -38,7 +38,7 @@ const (
 	statsFilePath              = "/tmp/vtap_defragment.json"
 )
 
-type AdapterRecordIdType uint64
+type AdapterRecordIdType uint32
 
 type IAdapterInstance interface {
 	ReassemblyCompletedCallback(timestamp time.Time, ifIndex int, buf []byte)
@@ -49,8 +49,10 @@ type NewDeFragmentLibFunc func() (IDeFragmentLib, error)
 type IDeFragmentLib interface {
 	Start() error
 	Stop()
-	AsyncProcessPacket(pktBuf []byte, inMarkValue uint64, onDetectCompleted def.OnDetectCompleted) error
+	AsyncProcessPacket(pktBuf []byte, userMarkValue uint32, onDetectCompleted def.OnDetectCompleted) error
 	PopFullPackets(count int) ([]*def.FullPacket, error)
+	FastDetect(pktData []byte, replyDetectInfo *def.DetectionInfo) error
+	Collect(detectInfo *def.DetectionInfo, userMarkValue uint32) error
 }
 
 var (
@@ -207,7 +209,7 @@ func (t *DeFragmentAdapter) AsyncProcessPacket(id AdapterRecordIdType, timestamp
 
 	var fragGroupID def.FragGroupID
 	var processErr error
-	processErr = t.lib.AsyncProcessPacket(buf, uint64(record.id), func(fragType def.FragType, fragGroupID def.FragGroupID) {
+	processErr = t.lib.AsyncProcessPacket(buf, uint32(record.id), func(fragType def.FragType, fragGroupID def.FragGroupID) {
 		record.associateCapturedInfo(fragGroupID, timestamp, ifIndex)
 	})
 	if processErr != nil {
@@ -216,6 +218,35 @@ func (t *DeFragmentAdapter) AsyncProcessPacket(id AdapterRecordIdType, timestamp
 	}
 
 	return fragGroupID != ""
+}
+
+func (t *DeFragmentAdapter) SyncProcessPacket(id AdapterRecordIdType, timestamp time.Time, ifIndex int, buf []byte) bool {
+	t.rwMutex.RLock()
+	record := t.recordMap[id]
+	t.rwMutex.RUnlock()
+	if record == nil {
+		log.Printf("[warning][DeFragmentAdapter] SyncProcessPacket failed, The record %v dose not exists\n", id)
+		return false
+	}
+
+	var detectInfo def.DetectionInfo
+	defer detectInfo.Rest()
+
+	if err := t.lib.FastDetect(buf, &detectInfo); err != nil {
+		log.Printf("[warning][DeFragmentAdapter] SyncProcessPacket, FastDetect failed, %v\n", err)
+		return false
+	}
+	if detectInfo.FragGroupId == "" {
+		return false
+	}
+
+	record.associateCapturedInfo(detectInfo.FragGroupId, timestamp, ifIndex)
+	if err := t.lib.Collect(&detectInfo, uint32(id)); err != nil {
+		log.Printf("[warning][DeFragmentAdapter] SyncProcessPacket, Collect failed, %v\n", err)
+		return false
+	}
+
+	return true
 }
 
 func (t *DeFragmentAdapter) listenReassemblyCompleted() {
@@ -232,10 +263,10 @@ func (t *DeFragmentAdapter) listenReassemblyCompleted() {
 		}
 
 		for _, pkt := range fullPktList {
-			recordId := AdapterRecordIdType(pkt.GetInMarkValue())
+			recordId := AdapterRecordIdType(pkt.GetUserMarkValue())
 			record := t.getRecord(recordId)
 			if record == nil {
-				log.Printf("[warning][DeFragmentAdapter] Call listenReassemblyCompleted failed, The record %v dose not exists\n", pkt.GetInMarkValue())
+				log.Printf("[warning][DeFragmentAdapter] Call listenReassemblyCompleted failed, The record %v dose not exists\n", pkt.GetUserMarkValue())
 				continue
 			}
 

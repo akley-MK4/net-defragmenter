@@ -2,6 +2,7 @@ package detection
 
 import (
 	"errors"
+	"fmt"
 	def "github.com/akley-MK4/net-defragmenter/definition"
 	"github.com/akley-MK4/net-defragmenter/stats"
 	"github.com/google/gopacket/layers"
@@ -27,24 +28,26 @@ func NewDetector(pickFragTypes []def.FragType) (*Detector, error) {
 	return &Detector{pickFragTypeSet: pickFragTypeSet}, nil
 }
 
-func (t *Detector) FastDetect(pktBuf []byte, detectInfo *def.DetectionInfo) error {
+func (t *Detector) FastDetect(pktData []byte, replyDetectInfo *def.DetectionInfo) error {
 	statsHandler := stats.GetDetectionStatsHandler()
-	statsHandler.AddTotalDetectedPacketsNum(1)
+	statsHandler.AddTotalReceivedDetectPacketsNum(1)
 
-	if err := detectEthernetLayer(pktBuf, detectInfo); err != nil {
+	if err := detectEthernetLayer(pktData, replyDetectInfo); err != nil {
 		statsHandler.AddTotalFailedDetectEthernetLayerNum(1)
 		return err
 	}
-	if detectInfo.EthType == layers.EthernetTypeLLC {
+	if replyDetectInfo.EthType == layers.EthernetTypeLLC {
 		return nil
 	}
 
-	if err := t.detectNetworkLayer(detectInfo); err != nil {
+	if err := t.detectNetworkLayer(replyDetectInfo); err != nil {
 		statsHandler.AddTotalFailedDetectNetworkLayerNum(1)
 		return err
 	}
 
-	if detectInfo.FragType == def.IPV4FragType || detectInfo.FragType == def.IPV6FragType {
+	if replyDetectInfo.FragType == def.IPV4FragType || replyDetectInfo.FragType == def.IPV6FragType {
+		replyDetectInfo.FragGroupId = def.FragGroupID(fmt.Sprintf("%s-%s-%v-%d", replyDetectInfo.SrcIP.String(),
+			replyDetectInfo.DstIP.String(), replyDetectInfo.IPProtocol, replyDetectInfo.Identification))
 		stats.GetDetectionStatsHandler().AddTotalSuccessfulDetectedFragsNum(1)
 		return nil
 	}

@@ -28,6 +28,7 @@ type CollectionStats struct {
 	ErrHandlerReassemblyStats         ErrorStats
 	TotalSuccessfulReassemblyFragsNum uint64
 	TotalPushedFullPacketsNum         uint64
+	TotalReleasedFullPacketsNum       uint64
 	TotalForceReleasedFullPacketsNum  uint64
 	TotalPoppedFullPacketsNum         uint64
 }
@@ -159,6 +160,13 @@ func (t *CollectionStatsHandler) AddTotalForceReleasedFullPacketsNum(delta uint6
 		return
 	}
 	atomic.AddUint64(&t.stats.TotalForceReleasedFullPacketsNum, delta)
+}
+
+func (t *CollectionStatsHandler) AddTotalReleasedFullPacketsNum(delta uint64) {
+	if !enabledStats {
+		return
+	}
+	atomic.AddUint64(&t.stats.TotalReleasedFullPacketsNum, delta)
 }
 
 func (t *CollectionStatsHandler) AddTotalPoppedFullPacketsNum(delta uint64) {

@@ -107,7 +107,7 @@ func LaunchDemoWithPcapReply(pcapFilePath string) {
 		pktData := packet.Data()
 		totalPktNum += 1
 		totalPktSize += len(pktData)
-		fragadapter_demo.GetAdapterInstance().AsyncProcessPacket(inst1.recordId, tp, ifIdx, pktData)
+		fragadapter_demo.GetAdapterInstance().SyncProcessPacket(inst1.recordId, tp, ifIdx, pktData)
 	}
 	log.Printf("PCAP file replay completed, The total number of replay packets is %d, The total size of the replay packets is %d bytes\n",
 		totalPktNum, totalPktSize)

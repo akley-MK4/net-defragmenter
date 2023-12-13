@@ -70,7 +70,7 @@ func (t *Manager) Stop() {
 	t.collectorMgr.Stop()
 }
 
-func (t *Manager) AsyncProcessPacket(pktBuf []byte, inMarkValue uint64, onDetectCompleted def.OnDetectCompleted) (retErr error) {
+func (t *Manager) AsyncProcessPacket(pktData []byte, userMarkValue uint32, onDetectCompleted def.OnDetectCompleted) (retErr error) {
 	defer func() {
 		if r := recover(); r != nil {
 			retErr = fmt.Errorf("catch AsyncProcessPacket exception, Recover: %v, Stack: %v", r, string(debug.Stack()))
@@ -91,9 +91,9 @@ func (t *Manager) AsyncProcessPacket(pktBuf []byte, inMarkValue uint64, onDetect
 	}
 
 	var detectInfo def.DetectionInfo
-	detectInfo.FragType = def.NonFragType
+	defer detectInfo.Rest()
 
-	if err := t.detector.FastDetect(pktBuf, &detectInfo); err != nil {
+	if err := t.detector.FastDetect(pktData, &detectInfo); err != nil {
 		return err
 	}
 	if detectInfo.FragType == def.NonFragType {
@@ -101,12 +101,12 @@ func (t *Manager) AsyncProcessPacket(pktBuf []byte, inMarkValue uint64, onDetect
 		return
 	}
 
-	fragGroupID := detectInfo.GenFragGroupID()
-	onDetectCompleted(detectInfo.FragType, fragGroupID)
+	onDetectCompleted(detectInfo.FragType, detectInfo.FragGroupId)
 
-	t.collectorMgr.Collect(fragGroupID, &detectInfo, inMarkValue)
+	if err := t.collectorMgr.Collect(&detectInfo, userMarkValue); err != nil {
+		return
+	}
 
-	detectInfo.Rest()
 	return
 }
 
@@ -120,4 +120,35 @@ func (t *Manager) PopFullPackets(count int) ([]*def.FullPacket, error) {
 	}
 
 	return t.collectorMgr.PopFullPackets(count)
+}
+
+func (t *Manager) FastDetect(pktData []byte, replyDetectInfo *def.DetectionInfo) error {
+	if t.status != def.StartedStatus {
+		return fmt.Errorf("manager not started, current status is %v", t.status)
+	}
+	if replyDetectInfo == nil {
+		return errors.New("the replyDetectInfo is a nil value")
+	}
+
+	replyDetectInfo.FragType = def.NonFragType
+	return t.detector.FastDetect(pktData, replyDetectInfo)
+}
+
+func (t *Manager) Collect(detectInfo *def.DetectionInfo, userMarkValue uint32) error {
+	if t.status != def.StartedStatus {
+		return fmt.Errorf("manager not started, current status is %v", t.status)
+	}
+	if detectInfo == nil {
+		return errors.New("the detectInfo is a nil value")
+	}
+
+	if detectInfo.FragGroupId == "" {
+		return errors.New("the FragGroupId of the detectInfo is not generated")
+	}
+
+	return t.collectorMgr.Collect(detectInfo, userMarkValue)
+}
+
+func ReleaseFullPacket(fullPkt *def.FullPacket) {
+	collection.ReleaseFullPacket(fullPkt)
 }

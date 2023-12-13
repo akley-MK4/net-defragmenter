@@ -1,7 +1,6 @@
 package definition
 
 import (
-	"fmt"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"net"
@@ -31,13 +30,13 @@ var (
 type OnDetectCompleted func(fragType FragType, fragGroupID FragGroupID)
 
 type FullPacket struct {
-	InMarkValue uint64
-	FragGroupID FragGroupID
-	Pkt         gopacket.Packet
+	UserMarkValue uint32
+	FragGroupID   FragGroupID
+	Pkt           gopacket.Packet
 }
 
-func (t *FullPacket) GetInMarkValue() uint64 {
-	return t.InMarkValue
+func (t *FullPacket) GetUserMarkValue() uint32 {
+	return t.UserMarkValue
 }
 
 func (t *FullPacket) GetFragGroupID() FragGroupID {
@@ -60,10 +59,8 @@ type DetectionInfo struct {
 	MoreFrags      bool
 	Identification uint32
 	IPPayload      []byte
-}
 
-func (t *DetectionInfo) GenFragGroupID() FragGroupID {
-	return FragGroupID(fmt.Sprintf("%s-%s-%v-%d", t.SrcIP.String(), t.DstIP.String(), t.IPProtocol, t.Identification))
+	FragGroupId FragGroupID
 }
 
 func (t *DetectionInfo) Rest() {
@@ -73,6 +70,7 @@ func (t *DetectionInfo) Rest() {
 	t.SrcIP = nil
 	t.DstIP = nil
 	t.IPPayload = nil
+	t.FragGroupId = ""
 }
 
 type ReplyParse struct {

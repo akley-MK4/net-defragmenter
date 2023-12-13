@@ -6,20 +6,15 @@ import (
 )
 
 type DetectionStats struct {
-	TotalDetectedPacketsNum uint64
-
+	TotalReceivedDetectPacketsNum uint64
+	//TotalNewDetectInfoNum             uint64
+	//TotalReleaseDetectInfoNum         uint64
 	TotalFailedDetectEthernetLayerNum uint64
 	TotalFailedDetectNetworkLayerNum  uint64
 	TotalNoNetworkLayerHandlerErrNum  uint64
 	ErrHandlerFastDetectStats         ErrorStats
 
 	TotalSuccessfulDetectedFragsNum uint64
-	//TotalLinkLayerErrNum          uint64
-	//TotalHandleNilErrNum          uint64
-	//ErrStats                      LayerPktErrStats
-	//TotalPickFragTypeNotExistsNum uint64
-	//TotalFilterAppLayerErrNum     uint64
-	//TotalDetectPassedNum          uint64
 }
 
 var (
@@ -38,12 +33,26 @@ func (t *DetectionStatsHandler) getStats() DetectionStats {
 	return t.stats
 }
 
-func (t *DetectionStatsHandler) AddTotalDetectedPacketsNum(delta uint64) {
+func (t *DetectionStatsHandler) AddTotalReceivedDetectPacketsNum(delta uint64) {
 	if !enabledStats {
 		return
 	}
-	atomic.AddUint64(&t.stats.TotalDetectedPacketsNum, delta)
+	atomic.AddUint64(&t.stats.TotalReceivedDetectPacketsNum, delta)
 }
+
+//func (t *DetectionStatsHandler) AddTotalNewDetectInfoNum(delta uint64) {
+//	if !enabledStats {
+//		return
+//	}
+//	atomic.AddUint64(&t.stats.TotalNewDetectInfoNum, delta)
+//}
+//
+//func (t *DetectionStatsHandler) AddTotalReleaseDetectInfoNum(delta uint64) {
+//	if !enabledStats {
+//		return
+//	}
+//	atomic.AddUint64(&t.stats.TotalReleaseDetectInfoNum, delta)
+//}
 
 func (t *DetectionStatsHandler) AddTotalFailedDetectEthernetLayerNum(delta uint64) {
 	if !enabledStats {
