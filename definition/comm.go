@@ -25,3 +25,8 @@ const (
 const (
 	ResultPacketProcessStepErr uint8 = iota
 )
+
+const (
+	CoroutineGroupCollector1    = "DefragmentLIB-collector-scheduling"
+	CoroutineGroupCollectorMgr1 = "DefragmentLIB-collectorMgr-checkFullPktQueueCapacityPeriodically"
+)

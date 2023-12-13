@@ -6,6 +6,9 @@ import (
 )
 
 type CollectionStats struct {
+	//TotalSuccessfulStartedCollectorsNum uint64
+	//TotalFailedStartCollectorsNum       uint64
+
 	TotalFailedDistributionMemberNum uint64
 	TotalNewFragElementsNum          uint64
 	TotalAllocatedFragElementsNum    uint64
@@ -44,6 +47,20 @@ type CollectionStatsHandler struct {
 func (t *CollectionStatsHandler) getStats() CollectionStats {
 	return t.stats
 }
+
+//func (t *CollectionStatsHandler) AddTotalSuccessfulStartedCollectorsNum(delta uint64) {
+//	if !enabledStats {
+//		return
+//	}
+//	atomic.AddUint64(&t.stats.TotalSuccessfulStartedCollectorsNum, delta)
+//}
+//
+//func (t *CollectionStatsHandler) AddTotalFailedStartCollectorsNum(delta uint64) {
+//	if !enabledStats {
+//		return
+//	}
+//	atomic.AddUint64(&t.stats.TotalFailedStartCollectorsNum, delta)
+//}
 
 func (t *CollectionStatsHandler) AddTotalFailedDistributionMemberNum(delta uint64) {
 	if !enabledStats {

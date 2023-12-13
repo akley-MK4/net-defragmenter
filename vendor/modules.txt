@@ -1,3 +1,8 @@
+# github.com/akley-MK4/pep-coroutine v1.0.2-pre
+## explicit; go 1.19
+github.com/akley-MK4/pep-coroutine/define
+github.com/akley-MK4/pep-coroutine/implement
+github.com/akley-MK4/pep-coroutine/logger
 # github.com/google/gopacket v1.1.19
 ## explicit; go 1.12
 github.com/google/gopacket

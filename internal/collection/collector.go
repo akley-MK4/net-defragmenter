@@ -8,6 +8,8 @@ import (
 	"github.com/akley-MK4/net-defragmenter/internal/handler"
 	"github.com/akley-MK4/net-defragmenter/internal/linkqueue"
 	"github.com/akley-MK4/net-defragmenter/stats"
+	PCD "github.com/akley-MK4/pep-coroutine/define"
+	PCI "github.com/akley-MK4/pep-coroutine/implement"
 	"time"
 )
 
@@ -36,8 +38,11 @@ type Collector struct {
 	sharedLayers     *common.SharedLayers
 }
 
-func (t *Collector) start() {
-	go t.schedulingCoroutine()
+func (t *Collector) start() error {
+	return PCI.CreateAndStartStatelessCoroutine(def.CoroutineGroupCollector1, func(_ PCD.CoId, _ ...interface{}) bool {
+		t.schedulingCoroutine()
+		return false
+	})
 }
 
 func (t *Collector) close() {

@@ -2,10 +2,13 @@ package fragadapter_demo
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	def "github.com/akley-MK4/net-defragmenter/definition"
 	"github.com/akley-MK4/net-defragmenter/manager"
 	"github.com/akley-MK4/net-defragmenter/stats"
+	PCD "github.com/akley-MK4/pep-coroutine/define"
+	PCI "github.com/akley-MK4/pep-coroutine/implement"
 	"log"
 	"os"
 	"runtime/debug"
@@ -44,7 +47,7 @@ type IAdapterInstance interface {
 type NewDeFragmentLibFunc func() (IDeFragmentLib, error)
 
 type IDeFragmentLib interface {
-	Start()
+	Start() error
 	Stop()
 	AsyncProcessPacket(pktBuf []byte, inMarkValue uint64, onDetectCompleted def.OnDetectCompleted) error
 	PopFullPackets(count int) ([]*def.FullPacket, error)
@@ -107,16 +110,33 @@ type DeFragmentAdapter struct {
 	rwMutex     sync.RWMutex
 }
 
-func (t *DeFragmentAdapter) Start() {
+func (t *DeFragmentAdapter) Start() error {
 	if !atomic.CompareAndSwapInt32(&t.status, initializedStatus, startedStatus) {
-		return
+		return errors.New("incorrect state")
 	}
 
-	t.lib.Start()
-	go t.listenReassemblyCompleted()
-	if enableStatsFile {
-		go updateStatsFilePeriodically()
+	if err := t.lib.Start(); err != nil {
+		return err
 	}
+
+	nowTime := time.Now()
+	if err := PCI.CreateAndStartStatelessCoroutine(PCD.CoGroup(fmt.Sprintf("listenReassemblyCompleted-%v", nowTime.String())), func(coID PCD.CoId, args ...interface{}) bool {
+		t.listenReassemblyCompleted()
+		return false
+	}); err != nil {
+		return err
+	}
+
+	if enableStatsFile {
+		if err := PCI.CreateAndStartStatelessCoroutine(PCD.CoGroup(fmt.Sprintf("updateStatsFilePeriodically-%v", nowTime.String())), func(coID PCD.CoId, args ...interface{}) bool {
+			updateStatsFilePeriodically()
+			return false
+		}); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (t *DeFragmentAdapter) Stop() {

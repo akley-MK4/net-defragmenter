@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/akley-MK4/net-defragmenter/fragadapter_demo"
 	"github.com/akley-MK4/net-defragmenter/stats"
+	PCI "github.com/akley-MK4/pep-coroutine/implement"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
 	"log"
@@ -34,6 +35,14 @@ func printMemoryStatus(title string) {
 func printStats() {
 	d, _ := json.Marshal(stats.GetStats())
 	log.Println("=============stats==================")
+	fmt.Println(string(d))
+	log.Println("====================================")
+
+}
+
+func printPCIStats() {
+	d, _ := json.Marshal(PCI.FetchStats())
+	log.Println("=============pep-coroutine-lib==================")
 	fmt.Println(string(d))
 	log.Println("====================================")
 
@@ -159,6 +168,7 @@ func LaunchDemoWithPcapReply(pcapFilePath string) {
 	printMemoryStatus("Memory State")
 	fmt.Println()
 
+	printPCIStats()
 	//apInst := fragadapter.GetAdapterInstance()
 	//fmt.Println(apInst)
 	printStats()

@@ -54,12 +54,12 @@ func (t *Manager) initialize(opt *def.Option) error {
 	return nil
 }
 
-func (t *Manager) Start() {
+func (t *Manager) Start() error {
 	if !atomic.CompareAndSwapInt32(&t.status, def.InitializedStatus, def.StartedStatus) {
-		return
+		return errors.New("incorrect state")
 	}
 
-	t.collectorMgr.Start()
+	return t.collectorMgr.Start()
 }
 
 func (t *Manager) Stop() {

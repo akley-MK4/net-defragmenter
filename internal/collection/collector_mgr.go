@@ -6,6 +6,8 @@ import (
 	"github.com/akley-MK4/net-defragmenter/internal/common"
 	"github.com/akley-MK4/net-defragmenter/internal/linkqueue"
 	"github.com/akley-MK4/net-defragmenter/stats"
+	PCD "github.com/akley-MK4/pep-coroutine/define"
+	PCI "github.com/akley-MK4/pep-coroutine/implement"
 	"hash/crc32"
 	"sync/atomic"
 	"time"
@@ -52,15 +54,25 @@ type CollectorMgr struct {
 	fullPktQueue       *linkqueue.LinkQueue
 }
 
-func (t *CollectorMgr) Start() {
+func (t *CollectorMgr) Start() error {
 	if !atomic.CompareAndSwapInt32(&t.status, def.InitializedStatus, def.StartedStatus) {
-		return
+		return errors.New("incorrect state")
 	}
 
-	go t.checkFullPktQueueCapacityPeriodically()
-	for _, mbr := range t.members {
-		mbr.start()
+	if err := PCI.CreateAndStartStatelessCoroutine(def.CoroutineGroupCollectorMgr1, func(coID PCD.CoId, args ...interface{}) bool {
+		t.checkFullPktQueueCapacityPeriodically()
+		return false
+	}); err != nil {
+		return err
 	}
+
+	for _, mbr := range t.members {
+		if err := mbr.start(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (t *CollectorMgr) Stop() {
