@@ -9,28 +9,28 @@ type CollectionStats struct {
 	//TotalSuccessfulStartedCollectorsNum uint64
 	//TotalFailedStartCollectorsNum       uint64
 
-	TotalFailedDistributionMemberNum uint64
-	TotalNewFragElementsNum          uint64
-	TotalAllocatedFragElementsNum    uint64
-	TotalRecycledFragElementsNum     uint64
+	TotalFailedDistributionMemberNum uint64 `json:"TotalFailedDistributionMemberNum,omitempty"`
+	TotalNewFragElementsNum          uint64 `json:"TotalNewFragElementsNum,omitempty"`
+	TotalAllocatedFragElementsNum    uint64 `json:"TotalAllocatedFragElementsNum,omitempty"`
+	TotalRecycledFragElementsNum     uint64 `json:"TotalRecycledFragElementsNum,omitempty"`
 
-	TotalAcceptedFragElementsNum uint64
-	TotalNotFoundHandlersNum     uint64
+	TotalAcceptedFragElementsNum uint64 `json:"TotalAcceptedFragElementsNum,omitempty"`
+	TotalNotFoundHandlersNum     uint64 `json:"TotalNotFoundHandlersNum,omitempty"`
 
-	TotalNewFragElementGroupsNum             uint64
-	TotalReleasedFragElementGroupsNum        uint64
-	TotalReleasedExpiredFragElementGroupsNum uint64
+	TotalNewFragElementGroupsNum             uint64 `json:"TotalNewFragElementGroupsNum,omitempty"`
+	TotalReleasedFragElementGroupsNum        uint64 `json:"TotalReleasedFragElementGroupsNum,omitempty"`
+	TotalReleasedExpiredFragElementGroupsNum uint64 `json:"TotalReleasedExpiredFragElementGroupsNum,omitempty"`
 
-	ErrorHandlerCollectStats         ErrorStats
-	TotalSuccessfulCollectedFragsNum uint64
+	ErrorHandlerCollectStats         ErrorStats `json:"ErrorHandlerCollectStats,omitempty"`
+	TotalSuccessfulCollectedFragsNum uint64     `json:"TotalSuccessfulCollectedFragsNum,omitempty"`
 
-	TotalReassemblyNoDelFragGroupsNum uint64
-	ErrHandlerReassemblyStats         ErrorStats
-	TotalSuccessfulReassemblyFragsNum uint64
-	TotalPushedFullPacketsNum         uint64
-	TotalReleasedFullPacketsNum       uint64
-	TotalForceReleasedFullPacketsNum  uint64
-	TotalPoppedFullPacketsNum         uint64
+	TotalReassemblyNoDelFragGroupsNum uint64     `json:"TotalReassemblyNoDelFragGroupsNum,omitempty"`
+	ErrHandlerReassemblyStats         ErrorStats `json:"ErrHandlerReassemblyStats,omitempty"`
+	TotalSuccessfulReassemblyFragsNum uint64     `json:"TotalSuccessfulReassemblyFragsNum,omitempty"`
+	TotalPushedFullPacketsNum         uint64     `json:"TotalPushedFullPacketsNum,omitempty"`
+	TotalReleasedFullPacketsNum       uint64     `json:"TotalReleasedFullPacketsNum,omitempty"`
+	TotalForceReleasedFullPacketsNum  uint64     `json:"TotalForceReleasedFullPacketsNum,omitempty"`
+	TotalPoppedFullPacketsNum         uint64     `json:"TotalPoppedFullPacketsNum,omitempty"`
 }
 
 var (
