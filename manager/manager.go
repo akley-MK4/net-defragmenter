@@ -5,9 +5,8 @@ import (
 	"fmt"
 	def "github.com/akley-MK4/net-defragmenter/definition"
 	"github.com/akley-MK4/net-defragmenter/internal/collection"
-	"github.com/akley-MK4/net-defragmenter/internal/ctrlapi"
 	"github.com/akley-MK4/net-defragmenter/internal/detection"
-	"github.com/akley-MK4/net-defragmenter/libstats"
+	"github.com/akley-MK4/net-defragmenter/stats"
 	"runtime/debug"
 	"sync/atomic"
 )
@@ -32,13 +31,11 @@ type Manager struct {
 }
 
 func (t *Manager) initialize(opt *def.Option) error {
-	if opt.CtrlApiServerOption.Enable {
-		if err := ctrlapi.InitCtrlApiServer(opt.CtrlApiServerOption.Port); err != nil {
-			return fmt.Errorf("InitCtrlApiServer failed, %v", err)
-		}
+	if opt.StatsOption.Enable {
+		stats.EnableStats()
+	} else {
+		stats.DisableStats()
 	}
-
-	libstats.InitStatsMgr(opt.StatsOption)
 
 	detector, newDetectorErr := detection.NewDetector(opt.PickFragmentTypes)
 	if newDetectorErr != nil {
@@ -73,35 +70,44 @@ func (t *Manager) Stop() {
 	t.collectorMgr.Stop()
 }
 
-func (t *Manager) AsyncProcessPacket(pktBuf []byte, inMarkValue uint64, onDetectSuccessful def.OnDetectSuccessfulFunc) (retErr error) {
-	if t.status != def.StartedStatus {
-		return fmt.Errorf("manager not started, current status is %v", t.status)
-	}
-
+func (t *Manager) AsyncProcessPacket(pktBuf []byte, inMarkValue uint64, onDetectCompleted def.OnDetectCompleted) (retErr error) {
 	defer func() {
 		if r := recover(); r != nil {
 			retErr = fmt.Errorf("catch AsyncProcessPacket exception, Recover: %v, Stack: %v", r, string(debug.Stack()))
+			stats.GetManagerStatsHandler().AddTotalCrashedAsyncProcessNum(1)
+		}
+		if retErr != nil {
+			stats.GetManagerStatsHandler().AddTotalFailedCallAsyncProcessNum(1)
 		}
 	}()
 
-	libstats.AddTotalReceivedPktNum(1)
+	if t.status != def.StartedStatus {
+		retErr = fmt.Errorf("manager not started, current status is %v", t.status)
+		return
+	}
+	if onDetectCompleted == nil {
+		retErr = errors.New("the onDetectCompleted is a nil value")
+		return
+	}
+
 	var detectInfo def.DetectionInfo
+	detectInfo.FragType = def.NonFragType
+
 	if err := t.detector.FastDetect(pktBuf, &detectInfo); err != nil {
 		return err
 	}
-	if detectInfo.FragType == def.InvalidFragType {
-		return nil
+	if detectInfo.FragType == def.NonFragType {
+		onDetectCompleted(detectInfo.FragType, "")
+		return
 	}
 
 	fragGroupID := detectInfo.GenFragGroupID()
-	if onDetectSuccessful != nil {
-		onDetectSuccessful(fragGroupID)
-	}
+	onDetectCompleted(detectInfo.FragType, fragGroupID)
 
 	t.collectorMgr.Collect(fragGroupID, &detectInfo, inMarkValue)
 
 	detectInfo.Rest()
-	return nil
+	return
 }
 
 func (t *Manager) PopFullPackets(count int) ([]*def.FullPacket, error) {

@@ -4,10 +4,10 @@ import (
 	"container/list"
 	"encoding/binary"
 	"fmt"
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
 	def "github.com/akley-MK4/net-defragmenter/definition"
 	"github.com/akley-MK4/net-defragmenter/internal/common"
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 )
 
 type IPV4Handler struct{}
@@ -49,11 +49,11 @@ func (t *IPV4Handler) FastDetect(detectInfo *def.DetectionInfo) (retErr error, r
 	return
 }
 
-func (t *IPV4Handler) Collect(fragElem *common.FragmentElement, fragElemGroup *common.FragmentElementGroup) (error, def.ErrResultType) {
-	return collectFragmentElement(fragElem, fragElemGroup)
+func (t *IPV4Handler) Collect(fragElem *common.FragElement, fragElemGroup *common.FragElementGroup) (error, def.ErrResultType) {
+	return collectFragElement(fragElem, fragElemGroup)
 }
 
-func (t *IPV4Handler) Reassembly(fragElemGroup *common.FragmentElementGroup,
+func (t *IPV4Handler) Reassembly(fragElemGroup *common.FragElementGroup,
 	sharedLayers *common.SharedLayers) (gopacket.Packet, error, def.ErrResultType) {
 
 	finalElem := fragElemGroup.GetFinalElement()
@@ -83,7 +83,7 @@ func (t *IPV4Handler) Reassembly(fragElemGroup *common.FragmentElementGroup,
 
 	payloadSpace := fullPktBuff.Bytes()[def.EthIPV4HdrLen:]
 	fragElemGroup.IterElementList(func(elem *list.Element) bool {
-		fragElem := elem.Value.(*common.FragmentElement)
+		fragElem := elem.Value.(*common.FragElement)
 		fragPayloadLen := fragElem.PayloadBuf.Len()
 		if fragPayloadLen <= 0 {
 			// todo
@@ -102,13 +102,13 @@ func (t *IPV4Handler) Reassembly(fragElemGroup *common.FragmentElementGroup,
 	return retPkt, nil, def.NonErrResultType
 }
 
-func collectFragmentElement(fragElem *common.FragmentElement, fragElemGroup *common.FragmentElementGroup) (error, def.ErrResultType) {
+func collectFragElement(fragElem *common.FragElement, fragElemGroup *common.FragElementGroup) (error, def.ErrResultType) {
 	fragOffset := fragElem.FragOffset * def.FragOffsetMulNum
 	if fragOffset >= fragElemGroup.GetHighest() {
 		fragElemGroup.PushElementToBack(fragElem)
 	} else {
 		fragElemGroup.IterElementList(func(elem *list.Element) bool {
-			exitElem := elem.Value.(*common.FragmentElement)
+			exitElem := elem.Value.(*common.FragElement)
 			if exitElem.FragOffset == fragElem.FragOffset {
 				// todo
 				return false

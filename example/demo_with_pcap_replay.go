@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/akley-MK4/net-defragmenter/fragadapter_demo"
-	"github.com/akley-MK4/net-defragmenter/libstats"
+	"github.com/akley-MK4/net-defragmenter/stats"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/pcap"
 	"log"
@@ -12,8 +12,19 @@ import (
 	"time"
 )
 
+type memorySnapshot struct {
+	AllocBytes uint64
+	AllocMBs   uint64
+}
+
 func printMemoryStatus(title string) {
-	memStats := libstats.CollectMemoryStatus()
+	var ms runtime.MemStats
+	runtime.ReadMemStats(&ms)
+
+	memStats := memorySnapshot{
+		AllocBytes: ms.Alloc,
+		AllocMBs:   ms.Alloc / (1024 * 1024),
+	}
 	data, _ := json.Marshal(memStats)
 	log.Printf("=============%v===========\n", title)
 	fmt.Println(string(data))
@@ -21,8 +32,7 @@ func printMemoryStatus(title string) {
 }
 
 func printStats() {
-	stats := libstats.GetStatsMgr()
-	d, _ := json.Marshal(stats)
+	d, _ := json.Marshal(stats.GetStats())
 	log.Println("=============stats==================")
 	fmt.Println(string(d))
 	log.Println("====================================")

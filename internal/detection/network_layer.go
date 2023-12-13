@@ -2,14 +2,14 @@ package detection
 
 import (
 	"fmt"
-	"github.com/google/gopacket/layers"
 	def "github.com/akley-MK4/net-defragmenter/definition"
 	"github.com/akley-MK4/net-defragmenter/internal/handler"
-	"github.com/akley-MK4/net-defragmenter/libstats"
+	"github.com/akley-MK4/net-defragmenter/stats"
+	"github.com/google/gopacket/layers"
 )
 
 func (t *Detector) detectNetworkLayer(detectInfo *def.DetectionInfo) error {
-	var mappingFragType def.FragmentType
+	var mappingFragType def.FragType
 	switch detectInfo.EthType {
 	case layers.EthernetTypeIPv4:
 		mappingFragType = def.IPV4FragType
@@ -25,15 +25,16 @@ func (t *Detector) detectNetworkLayer(detectInfo *def.DetectionInfo) error {
 		return nil
 	}
 
+	statsHandler := stats.GetDetectionStatsHandler()
 	hd := handler.GetHandler(mappingFragType)
 	if hd == nil {
-		libstats.AddTotalDetectHandleNilErrNum(1)
+		statsHandler.AddTotalNoNetworkLayerHandlerErrNum(1)
 		return fmt.Errorf("handler with fragment type %v dose not exists", mappingFragType)
 	}
 
 	detectErr, detectErrType := hd.FastDetect(detectInfo)
 	if detectErr != nil {
-		libstats.AddTotalDetectErrStatsNum(1, detectErrType)
+		statsHandler.AddErrHandlerFastDetectStats(1, detectErrType)
 		return detectErr
 	}
 

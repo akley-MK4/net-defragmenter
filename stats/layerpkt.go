@@ -1,4 +1,4 @@
-package libstats
+package stats
 
 import (
 	def "github.com/akley-MK4/net-defragmenter/definition"

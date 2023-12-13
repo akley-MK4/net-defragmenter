@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	def "github.com/akley-MK4/net-defragmenter/definition"
-	"github.com/akley-MK4/net-defragmenter/libstats"
 	"github.com/akley-MK4/net-defragmenter/manager"
+	"github.com/akley-MK4/net-defragmenter/stats"
 	"log"
 	"os"
 	"runtime/debug"
@@ -46,7 +46,7 @@ type NewDeFragmentLibFunc func() (IDeFragmentLib, error)
 type IDeFragmentLib interface {
 	Start()
 	Stop()
-	AsyncProcessPacket(pktBuf []byte, inMarkValue uint64, onDetectSuccessful def.OnDetectSuccessfulFunc) error
+	AsyncProcessPacket(pktBuf []byte, inMarkValue uint64, onDetectCompleted def.OnDetectCompleted) error
 	PopFullPackets(count int) ([]*def.FullPacket, error)
 }
 
@@ -76,11 +76,9 @@ func GetAdapterInstance() *DeFragmentAdapter {
 func NewDeFragmentAdapter() (*DeFragmentAdapter, error) {
 	opt := def.NewOption(func(opt *def.Option) {
 		//opt.CtrlApiServerOption.Enable = true
-		opt.CtrlApiServerOption.Port = 11793
-
 		opt.StatsOption.Enable = true
 
-		opt.PickFragmentTypes = []def.FragmentType{def.IPV4FragType, def.IPV6FragType}
+		opt.PickFragmentTypes = []def.FragType{def.IPV4FragType, def.IPV6FragType}
 
 		opt.CollectorOption.MaxCollectorsNum = 30
 		opt.CollectorOption.MaxChannelCap = 2000
@@ -187,9 +185,9 @@ func (t *DeFragmentAdapter) AsyncProcessPacket(id AdapterRecordIdType, timestamp
 		return false
 	}
 
-	var fragGroupID def.FragmentGroupID
+	var fragGroupID def.FragGroupID
 	var processErr error
-	processErr = t.lib.AsyncProcessPacket(buf, uint64(record.id), func(fragGroupID def.FragmentGroupID) {
+	processErr = t.lib.AsyncProcessPacket(buf, uint64(record.id), func(fragType def.FragType, fragGroupID def.FragGroupID) {
 		record.associateCapturedInfo(fragGroupID, timestamp, ifIndex)
 	})
 	if processErr != nil {
@@ -254,8 +252,7 @@ func updateStatsFile() (retErr error) {
 		}
 	}()
 
-	statsData := libstats.GetStatsMgr()
-	d, marshalErr := json.Marshal(statsData)
+	d, marshalErr := json.Marshal(stats.GetStats())
 	if marshalErr != nil {
 		retErr = marshalErr
 		return

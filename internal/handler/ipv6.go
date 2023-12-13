@@ -4,10 +4,10 @@ import (
 	"container/list"
 	"encoding/binary"
 	"fmt"
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
 	def "github.com/akley-MK4/net-defragmenter/definition"
 	"github.com/akley-MK4/net-defragmenter/internal/common"
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 )
 
 type IPV6Handler struct{}
@@ -53,11 +53,11 @@ func (t *IPV6Handler) FastDetect(detectInfo *def.DetectionInfo) (retErr error, r
 	return
 }
 
-func (t *IPV6Handler) Collect(fragElem *common.FragmentElement, fragElemGroup *common.FragmentElementGroup) (error, def.ErrResultType) {
-	return collectFragmentElement(fragElem, fragElemGroup)
+func (t *IPV6Handler) Collect(fragElem *common.FragElement, fragElemGroup *common.FragElementGroup) (error, def.ErrResultType) {
+	return collectFragElement(fragElem, fragElemGroup)
 }
 
-func (t *IPV6Handler) Reassembly(fragElemGroup *common.FragmentElementGroup,
+func (t *IPV6Handler) Reassembly(fragElemGroup *common.FragElementGroup,
 	sharedLayers *common.SharedLayers) (gopacket.Packet, error, def.ErrResultType) {
 
 	finalElem := fragElemGroup.GetFinalElement()
@@ -86,7 +86,7 @@ func (t *IPV6Handler) Reassembly(fragElemGroup *common.FragmentElementGroup,
 
 	payloadSpace := fullPktBuff.Bytes()[def.EthIPV6HdrLen:]
 	fragElemGroup.IterElementList(func(elem *list.Element) bool {
-		fragElem := elem.Value.(*common.FragmentElement)
+		fragElem := elem.Value.(*common.FragElement)
 		fragPayloadLen := fragElem.PayloadBuf.Len()
 		if fragPayloadLen <= 0 {
 			// todo

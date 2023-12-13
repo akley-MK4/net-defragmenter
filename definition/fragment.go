@@ -7,10 +7,10 @@ import (
 	"net"
 )
 
-type FragmentType int8
+type FragType int8
 
 const (
-	InvalidFragType FragmentType = iota
+	NonFragType FragType = iota
 
 	IPV4FragType
 	IPV6FragType
@@ -19,20 +19,20 @@ const (
 	MaxInvalidFragType
 )
 
-type FragmentGroupID string
+type FragGroupID string
 
 var (
-	layerEnumMapping = map[interface{}]FragmentType{
+	layerEnumMapping = map[interface{}]FragType{
 		layers.EthernetTypeIPv4: IPV4FragType,
 		layers.EthernetTypeIPv6: IPV6FragType,
 	}
 )
 
-type OnDetectSuccessfulFunc func(fragGroupID FragmentGroupID)
+type OnDetectCompleted func(fragType FragType, fragGroupID FragGroupID)
 
 type FullPacket struct {
 	InMarkValue uint64
-	FragGroupID FragmentGroupID
+	FragGroupID FragGroupID
 	Pkt         gopacket.Packet
 }
 
@@ -40,7 +40,7 @@ func (t *FullPacket) GetInMarkValue() uint64 {
 	return t.InMarkValue
 }
 
-func (t *FullPacket) GetFragGroupID() FragmentGroupID {
+func (t *FullPacket) GetFragGroupID() FragGroupID {
 	return t.FragGroupID
 }
 
@@ -55,15 +55,15 @@ type DetectionInfo struct {
 
 	SrcIP, DstIP   net.IP
 	IPProtocol     layers.IPProtocol
-	FragType       FragmentType
+	FragType       FragType
 	FragOffset     uint16
 	MoreFrags      bool
 	Identification uint32
 	IPPayload      []byte
 }
 
-func (t *DetectionInfo) GenFragGroupID() FragmentGroupID {
-	return FragmentGroupID(fmt.Sprintf("%s-%s-%v-%d", t.SrcIP.String(), t.DstIP.String(), t.IPProtocol, t.Identification))
+func (t *DetectionInfo) GenFragGroupID() FragGroupID {
+	return FragGroupID(fmt.Sprintf("%s-%s-%v-%d", t.SrcIP.String(), t.DstIP.String(), t.IPProtocol, t.Identification))
 }
 
 func (t *DetectionInfo) Rest() {

@@ -12,14 +12,14 @@ func NewAdapterRecord(id AdapterRecordIdType, inst IAdapterInstance) *AdapterRec
 	return &AdapterRecord{
 		id:              id,
 		inst:            inst,
-		capturedInfoMap: make(map[def.FragmentGroupID]*CapturedInfo),
+		capturedInfoMap: make(map[def.FragGroupID]*CapturedInfo),
 	}
 }
 
 type AdapterRecord struct {
 	id              AdapterRecordIdType
 	inst            IAdapterInstance
-	capturedInfoMap map[def.FragmentGroupID]*CapturedInfo
+	capturedInfoMap map[def.FragGroupID]*CapturedInfo
 	mutex           sync.Mutex
 }
 
@@ -43,7 +43,7 @@ func (t *AdapterRecord) release() {
 		return
 	}
 
-	keys := make([]def.FragmentGroupID, 0, mapLen)
+	keys := make([]def.FragGroupID, 0, mapLen)
 	for key := range t.capturedInfoMap {
 		keys = append(keys, key)
 	}
@@ -52,7 +52,7 @@ func (t *AdapterRecord) release() {
 	}
 }
 
-func (t *AdapterRecord) associateCapturedInfo(fragGroupID def.FragmentGroupID, timestamp time.Time, ifIndex int) {
+func (t *AdapterRecord) associateCapturedInfo(fragGroupID def.FragGroupID, timestamp time.Time, ifIndex int) {
 	t.mutex.Lock()
 	defer t.mutex.Unlock()
 

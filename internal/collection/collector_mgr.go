@@ -5,7 +5,7 @@ import (
 	def "github.com/akley-MK4/net-defragmenter/definition"
 	"github.com/akley-MK4/net-defragmenter/internal/common"
 	"github.com/akley-MK4/net-defragmenter/internal/linkqueue"
-	"github.com/akley-MK4/net-defragmenter/libstats"
+	"github.com/akley-MK4/net-defragmenter/stats"
 	"hash/crc32"
 	"sync/atomic"
 	"time"
@@ -73,15 +73,16 @@ func (t *CollectorMgr) Stop() {
 	}
 }
 
-func (t *CollectorMgr) Collect(fragGroupID def.FragmentGroupID, detectInfo *def.DetectionInfo, inMarkValue uint64) {
+func (t *CollectorMgr) Collect(fragGroupID def.FragGroupID, detectInfo *def.DetectionInfo, inMarkValue uint64) {
+	statsHandler := stats.GetCollectionStatsHandler()
 	membersLen := len(t.members)
 	if membersLen <= 0 {
-		libstats.AddTotalDistributeFragmentFailureNum(1)
+		statsHandler.AddTotalFailedDistributionMemberNum(1)
 		return
 	}
 
-	fragElem := common.NewFragmentElement()
-	setFragmentElement(fragElem, detectInfo, fragGroupID, inMarkValue)
+	fragElem := common.NewFragElement()
+	setFragElement(fragElem, detectInfo, fragGroupID, inMarkValue)
 
 	hashVal := crc32.ChecksumIEEE([]byte(fragGroupID))
 	idx := hashVal % uint32(membersLen)
@@ -106,7 +107,7 @@ func (t *CollectorMgr) checkFullPktQueueCapacityPeriodically() {
 
 		for _, compPkt := range t.fullPktQueue.SafetyPopValues(releaseCount * 2) {
 			compPkt.(*def.FullPacket).Pkt = nil
-			libstats.AddTotalReleaseFullPktNum(1)
+			stats.GetCollectionStatsHandler().AddTotalForceReleasedFullPacketsNum(1)
 		}
 	}
 }
@@ -126,12 +127,12 @@ func (t *CollectorMgr) PopFullPackets(count int) ([]*def.FullPacket, error) {
 		retPktList = append(retPktList, val.(*def.FullPacket))
 	}
 
-	libstats.AddTotalPopFullPktNum(uint64(len(pktValues)))
+	stats.GetCollectionStatsHandler().AddTotalPoppedFullPacketsNum(uint64(len(pktValues)))
 	return retPktList, nil
 }
 
-func setFragmentElement(fragElem *common.FragmentElement, detectInfo *def.DetectionInfo,
-	fragGroupID def.FragmentGroupID, inMarkValue uint64) {
+func setFragElement(fragElem *common.FragElement, detectInfo *def.DetectionInfo,
+	fragGroupID def.FragGroupID, inMarkValue uint64) {
 
 	fragElem.Type = detectInfo.FragType
 	fragElem.GroupID = fragGroupID
