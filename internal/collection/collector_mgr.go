@@ -16,9 +16,13 @@ import (
 const (
 	fullPktQueueCheckingSec         = 5
 	releaseFullPktAfterSec          = 10
-	fragSetDurationSec              = 10
+	defaultMaxFragGroupDurationSec  = 10
 	intervalCheckFragSec            = 5
 	intervalRestSharedLayersFragSec = 60 * 5
+)
+
+var (
+	maxFragGroupDurationSec int64 = defaultMaxFragGroupDurationSec
 )
 
 func NewCollectorMgr(opt def.CollectorOption) (*CollectorMgr, error) {
@@ -30,6 +34,9 @@ func NewCollectorMgr(opt def.CollectorOption) (*CollectorMgr, error) {
 	}
 	if opt.MaxFullPktQueueLen <= 0 {
 		return nil, errors.New("the maxFullPktQueueLen parameter is less than or equal to 0")
+	}
+	if opt.MaxFragGroupDurationSeconds > 0 {
+		maxFragGroupDurationSec = opt.MaxFragGroupDurationSeconds
 	}
 
 	fullPktQueue := linkqueue.NewLinkQueue()

@@ -91,7 +91,7 @@ func (t *Collector) checkFragmentElementSetExpired() {
 	nowTp := time.Now().Unix()
 	var expiredGroups []*common.FragElementGroup
 	for _, fragElemGroup := range t.fragElemGroupMap {
-		if (nowTp - fragElemGroup.GetCreateTimestamp()) > fragSetDurationSec {
+		if (nowTp - fragElemGroup.GetCreateTimestamp()) > maxFragGroupDurationSec {
 			expiredGroups = append(expiredGroups, fragElemGroup)
 		}
 	}

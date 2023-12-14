@@ -88,6 +88,7 @@ func NewDeFragmentAdapter() (*DeFragmentAdapter, error) {
 		opt.CollectorOption.MaxCollectorsNum = 30
 		opt.CollectorOption.MaxChannelCap = 2000
 		opt.CollectorOption.MaxFullPktQueueLen = 10000
+		opt.CollectorOption.MaxFragGroupDurationSeconds = 60
 	})
 
 	lib, newLibErr := manager.NewManager(opt)
