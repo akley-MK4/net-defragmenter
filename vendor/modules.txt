@@ -1,4 +1,4 @@
-# github.com/akley-MK4/pep-coroutine v1.0.2-pre
+# github.com/akley-MK4/pep-coroutine v1.0.0
 ## explicit; go 1.19
 github.com/akley-MK4/pep-coroutine/define
 github.com/akley-MK4/pep-coroutine/implement
