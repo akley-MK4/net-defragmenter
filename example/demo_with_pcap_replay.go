@@ -1,4 +1,4 @@
-package example
+package main
 
 import (
 	"encoding/json"
@@ -48,7 +48,7 @@ func printPCIStats() {
 
 }
 
-func LaunchDemoWithPcapReply(pcapFilePath string) {
+func launchDemoWithPcapReply(pcapFilePath string) {
 	availableNumCPU := runtime.NumCPU()
 	runtime.GOMAXPROCS(availableNumCPU)
 	log.Printf("The current number of logical CPUs available for the process is %d\n", availableNumCPU)

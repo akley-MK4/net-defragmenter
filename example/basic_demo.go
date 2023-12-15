@@ -1,4 +1,4 @@
-package example
+package main
 
 import (
 	"github.com/akley-MK4/net-defragmenter/fragadapter_demo"
@@ -24,7 +24,7 @@ func (t *simulationInstance) ReassemblyCompletedCallback(timestamp time.Time, if
 	//	timestamp.String(), ifIndex, len(buf))
 }
 
-func LaunchBasicDemo() {
+func launchBasicDemo() {
 	newAdapterErr := fragadapter_demo.InitializeAdapterInstance()
 	if newAdapterErr != nil {
 		log.Printf("NewDeFragmentAdapter failed, %v\n", newAdapterErr)
