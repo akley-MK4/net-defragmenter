@@ -30,13 +30,13 @@ var (
 type OnDetectCompleted func(fragType FragType, fragGroupID FragGroupID)
 
 type FullPacket struct {
-	UserMarkValue uint32
-	FragGroupID   FragGroupID
-	Pkt           gopacket.Packet
+	InterfaceId InterfaceId
+	FragGroupID FragGroupID
+	Pkt         gopacket.Packet
 }
 
-func (t *FullPacket) GetUserMarkValue() uint32 {
-	return t.UserMarkValue
+func (t *FullPacket) GetInterfaceId() InterfaceId {
+	return t.InterfaceId
 }
 
 func (t *FullPacket) GetFragGroupID() FragGroupID {
@@ -60,6 +60,7 @@ type DetectionInfo struct {
 	Identification uint32
 	IPPayload      []byte
 
+	InterfaceId InterfaceId
 	FragGroupId FragGroupID
 }
 

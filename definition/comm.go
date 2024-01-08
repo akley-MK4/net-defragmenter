@@ -9,6 +9,8 @@ const (
 
 type ErrResultType uint16
 
+type InterfaceId uint16
+
 const (
 	NonErrResultType ErrResultType = iota
 	ErrResultTypeNewPacket

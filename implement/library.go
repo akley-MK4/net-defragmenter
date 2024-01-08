@@ -1,4 +1,4 @@
-package manager
+package implement
 
 import (
 	"errors"
@@ -11,26 +11,26 @@ import (
 	"sync/atomic"
 )
 
-func NewManager(opt *def.Option) (*Manager, error) {
+func NewLibraryInstance(opt *def.Option) (*Library, error) {
 	if opt == nil {
 		return nil, errors.New("opt is a nil pointer")
 	}
 
-	mgr := &Manager{}
-	if err := mgr.initialize(opt); err != nil {
+	inst := &Library{}
+	if err := inst.initialize(opt); err != nil {
 		return nil, err
 	}
 
-	return mgr, nil
+	return inst, nil
 }
 
-type Manager struct {
+type Library struct {
 	status       int32
 	detector     *detection.Detector
 	collectorMgr *collection.CollectorMgr
 }
 
-func (t *Manager) initialize(opt *def.Option) error {
+func (t *Library) initialize(opt *def.Option) error {
 	if opt.StatsOption.Enable {
 		stats.EnableStats()
 	} else {
@@ -54,7 +54,7 @@ func (t *Manager) initialize(opt *def.Option) error {
 	return nil
 }
 
-func (t *Manager) Start() error {
+func (t *Library) Start() error {
 	if !atomic.CompareAndSwapInt32(&t.status, def.InitializedStatus, def.StartedStatus) {
 		return errors.New("incorrect state")
 	}
@@ -62,7 +62,7 @@ func (t *Manager) Start() error {
 	return t.collectorMgr.Start()
 }
 
-func (t *Manager) Stop() {
+func (t *Library) Stop() {
 	if !atomic.CompareAndSwapInt32(&t.status, def.StartedStatus, def.StoppedStatus) {
 		return
 	}
@@ -70,7 +70,7 @@ func (t *Manager) Stop() {
 	t.collectorMgr.Stop()
 }
 
-func (t *Manager) AsyncProcessPacket(pktData []byte, userMarkValue uint32, onDetectCompleted def.OnDetectCompleted) (retErr error) {
+func (t *Library) AsyncProcessPacket(interfaceId def.InterfaceId, pktData []byte, onDetectCompleted def.OnDetectCompleted) (retErr error) {
 	defer func() {
 		if r := recover(); r != nil {
 			retErr = fmt.Errorf("catch AsyncProcessPacket exception, Recover: %v, Stack: %v", r, string(debug.Stack()))
@@ -93,7 +93,7 @@ func (t *Manager) AsyncProcessPacket(pktData []byte, userMarkValue uint32, onDet
 	var detectInfo def.DetectionInfo
 	defer detectInfo.Rest()
 
-	if err := t.detector.FastDetect(pktData, &detectInfo); err != nil {
+	if err := t.detector.FastDetect(interfaceId, pktData, &detectInfo); err != nil {
 		return err
 	}
 	if detectInfo.FragType == def.NonFragType {
@@ -103,14 +103,14 @@ func (t *Manager) AsyncProcessPacket(pktData []byte, userMarkValue uint32, onDet
 
 	onDetectCompleted(detectInfo.FragType, detectInfo.FragGroupId)
 
-	if err := t.collectorMgr.Collect(&detectInfo, userMarkValue); err != nil {
+	if err := t.collectorMgr.Collect(&detectInfo); err != nil {
 		return
 	}
 
 	return
 }
 
-func (t *Manager) PopFullPackets(count int) ([]*def.FullPacket, error) {
+func (t *Library) PopFullPackets(count int) ([]*def.FullPacket, error) {
 	if t.status != def.StartedStatus {
 		return nil, fmt.Errorf("manager not started, current status is %v", t.status)
 	}
@@ -122,7 +122,7 @@ func (t *Manager) PopFullPackets(count int) ([]*def.FullPacket, error) {
 	return t.collectorMgr.PopFullPackets(count)
 }
 
-func (t *Manager) FastDetect(pktData []byte, replyDetectInfo *def.DetectionInfo) error {
+func (t *Library) FastDetect(interfaceId def.InterfaceId, pktData []byte, replyDetectInfo *def.DetectionInfo) error {
 	if t.status != def.StartedStatus {
 		return fmt.Errorf("manager not started, current status is %v", t.status)
 	}
@@ -131,10 +131,10 @@ func (t *Manager) FastDetect(pktData []byte, replyDetectInfo *def.DetectionInfo)
 	}
 
 	replyDetectInfo.FragType = def.NonFragType
-	return t.detector.FastDetect(pktData, replyDetectInfo)
+	return t.detector.FastDetect(interfaceId, pktData, replyDetectInfo)
 }
 
-func (t *Manager) Collect(detectInfo *def.DetectionInfo, userMarkValue uint32) error {
+func (t *Library) Collect(detectInfo *def.DetectionInfo) error {
 	if t.status != def.StartedStatus {
 		return fmt.Errorf("manager not started, current status is %v", t.status)
 	}
@@ -145,8 +145,11 @@ func (t *Manager) Collect(detectInfo *def.DetectionInfo, userMarkValue uint32) e
 	if detectInfo.FragGroupId == "" {
 		return errors.New("the FragGroupId of the detectInfo is not generated")
 	}
+	if detectInfo.InterfaceId == 0 {
+		return errors.New("the InterfaceId of the detectInfo is 0")
+	}
 
-	return t.collectorMgr.Collect(detectInfo, userMarkValue)
+	return t.collectorMgr.Collect(detectInfo)
 }
 
 func ReleaseFullPacket(fullPkt *def.FullPacket) {

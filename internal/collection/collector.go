@@ -164,9 +164,9 @@ func (t *Collector) checkAndReassembly(fragElemGroup *common.FragElementGroup, f
 
 	statsHandler.AddTotalPushedFullPacketsNum(1)
 	t.ptrFullPktQueue.SafetyPutValue(&def.FullPacket{
-		UserMarkValue: fragElem.UserMarkValue,
-		FragGroupID:   fragElem.GroupID,
-		Pkt:           pkt,
+		InterfaceId: fragElem.InterfaceId,
+		FragGroupID: fragElem.GroupID,
+		Pkt:         pkt,
 	})
 
 	return nil

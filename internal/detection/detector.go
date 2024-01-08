@@ -2,10 +2,11 @@ package detection
 
 import (
 	"errors"
-	"fmt"
 	def "github.com/akley-MK4/net-defragmenter/definition"
 	"github.com/akley-MK4/net-defragmenter/stats"
 	"github.com/google/gopacket/layers"
+	"strconv"
+	"strings"
 )
 
 type Detector struct {
@@ -28,7 +29,7 @@ func NewDetector(pickFragTypes []def.FragType) (*Detector, error) {
 	return &Detector{pickFragTypeSet: pickFragTypeSet}, nil
 }
 
-func (t *Detector) FastDetect(pktData []byte, replyDetectInfo *def.DetectionInfo) error {
+func (t *Detector) FastDetect(interfaceId def.InterfaceId, pktData []byte, replyDetectInfo *def.DetectionInfo) error {
 	statsHandler := stats.GetDetectionStatsHandler()
 	statsHandler.AddTotalReceivedDetectPacketsNum(1)
 
@@ -46,8 +47,14 @@ func (t *Detector) FastDetect(pktData []byte, replyDetectInfo *def.DetectionInfo
 	}
 
 	if replyDetectInfo.FragType == def.IPV4FragType || replyDetectInfo.FragType == def.IPV6FragType {
-		replyDetectInfo.FragGroupId = def.FragGroupID(fmt.Sprintf("%s-%s-%v-%d", replyDetectInfo.SrcIP.String(),
-			replyDetectInfo.DstIP.String(), replyDetectInfo.IPProtocol, replyDetectInfo.Identification))
+		replyDetectInfo.InterfaceId = interfaceId
+		replyDetectInfo.FragGroupId = def.FragGroupID(strings.Join([]string{
+			strconv.Itoa(int(interfaceId)),
+			replyDetectInfo.SrcIP.String(),
+			replyDetectInfo.DstIP.String(),
+			strconv.Itoa(int(replyDetectInfo.IPProtocol)),
+			strconv.Itoa(int(replyDetectInfo.Identification)),
+		}, "-"))
 		stats.GetDetectionStatsHandler().AddTotalSuccessfulDetectedFragsNum(1)
 		return nil
 	}

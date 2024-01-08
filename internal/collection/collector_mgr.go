@@ -92,7 +92,7 @@ func (t *CollectorMgr) Stop() {
 	}
 }
 
-func (t *CollectorMgr) Collect(detectInfo *def.DetectionInfo, userMarkValue uint32) error {
+func (t *CollectorMgr) Collect(detectInfo *def.DetectionInfo) error {
 	statsHandler := stats.GetCollectionStatsHandler()
 	membersLen := len(t.members)
 	if membersLen <= 0 {
@@ -101,7 +101,7 @@ func (t *CollectorMgr) Collect(detectInfo *def.DetectionInfo, userMarkValue uint
 	}
 
 	fragElem := common.NewFragElement()
-	setFragElement(fragElem, detectInfo, userMarkValue)
+	setFragElement(fragElem, detectInfo)
 
 	hashVal := crc32.ChecksumIEEE([]byte(detectInfo.FragGroupId))
 	idx := hashVal % uint32(membersLen)
@@ -152,11 +152,11 @@ func (t *CollectorMgr) PopFullPackets(count int) ([]*def.FullPacket, error) {
 	return retPktList, nil
 }
 
-func setFragElement(fragElem *common.FragElement, detectInfo *def.DetectionInfo, userMarkValue uint32) {
+func setFragElement(fragElem *common.FragElement, detectInfo *def.DetectionInfo) {
 
 	fragElem.Type = detectInfo.FragType
 	fragElem.GroupID = detectInfo.FragGroupId
-	fragElem.UserMarkValue = userMarkValue
+	fragElem.InterfaceId = detectInfo.InterfaceId
 	fragElem.FragOffset = detectInfo.FragOffset
 	fragElem.MoreFrags = detectInfo.MoreFrags
 	fragElem.Identification = detectInfo.Identification
