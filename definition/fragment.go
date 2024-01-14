@@ -64,7 +64,7 @@ type DetectionInfo struct {
 	FragGroupId FragGroupID
 }
 
-func (t *DetectionInfo) Rest() {
+func (t *DetectionInfo) Reset() {
 	t.SrcMAC = nil
 	t.DstMAC = nil
 	t.EthPayload = nil

@@ -40,14 +40,14 @@ func NewCollectorMgr(opt def.CollectorOption) (*CollectorMgr, error) {
 	}
 
 	fullPktQueue := linkqueue.NewLinkQueue()
-	members := make([]*Collector, 0, opt.MaxCollectorsNum)
+	collectors := make([]*Collector, 0, opt.MaxCollectorsNum)
 	for i := 0; i < int(opt.MaxCollectorsNum); i++ {
-		members = append(members, newCollector(uint32(i), opt.MaxChannelCap, fullPktQueue))
+		collectors = append(collectors, newCollector(uint32(i), opt.MaxChannelCap, fullPktQueue))
 	}
 
 	mgr := &CollectorMgr{
 		status:             def.InitializedStatus,
-		members:            members,
+		collectors:         collectors,
 		fullPktQueue:       fullPktQueue,
 		maxFullPktQueueLen: opt.MaxFullPktQueueLen,
 	}
@@ -57,7 +57,7 @@ func NewCollectorMgr(opt def.CollectorOption) (*CollectorMgr, error) {
 type CollectorMgr struct {
 	status             int32
 	maxFullPktQueueLen uint32
-	members            []*Collector
+	collectors         []*Collector
 	fullPktQueue       *linkqueue.LinkQueue
 }
 
@@ -73,8 +73,8 @@ func (t *CollectorMgr) Start() error {
 		return err
 	}
 
-	for _, mbr := range t.members {
-		if err := mbr.start(); err != nil {
+	for _, collector := range t.collectors {
+		if err := collector.start(); err != nil {
 			return err
 		}
 	}
@@ -87,26 +87,26 @@ func (t *CollectorMgr) Stop() {
 		return
 	}
 
-	for _, mbr := range t.members {
-		mbr.close()
+	for _, collector := range t.collectors {
+		collector.close()
 	}
 }
 
 func (t *CollectorMgr) Collect(detectInfo *def.DetectionInfo) error {
 	statsHandler := stats.GetCollectionStatsHandler()
-	membersLen := len(t.members)
-	if membersLen <= 0 {
+	collectorsLen := len(t.collectors)
+	if collectorsLen <= 0 {
 		statsHandler.AddTotalFailedDistributionMemberNum(1)
-		return errors.New("no member")
+		return errors.New("no collector")
 	}
 
 	fragElem := common.NewFragElement()
 	setFragElement(fragElem, detectInfo)
 
 	hashVal := crc32.ChecksumIEEE([]byte(detectInfo.FragGroupId))
-	idx := hashVal % uint32(membersLen)
-	mbr := t.members[idx]
-	mbr.pushFragmentElement(fragElem)
+	idx := hashVal % uint32(collectorsLen)
+	collector := t.collectors[idx]
+	collector.pushFragmentElement(fragElem)
 
 	return nil
 }

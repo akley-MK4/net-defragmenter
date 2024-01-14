@@ -20,7 +20,7 @@ func newCollector(id, maxListenChanCap uint32, ptrFullPktQueue *linkqueue.LinkQu
 		id:               id,
 		cancelCtx:        cancelCtx,
 		cancelFunc:       cancelFunc,
-		listenChan:       make(chan *common.FragElement, maxListenChanCap),
+		fragmentChan:     make(chan *common.FragElement, maxListenChanCap),
 		fragElemGroupMap: make(map[def.FragGroupID]*common.FragElementGroup),
 		ptrFullPktQueue:  ptrFullPktQueue,
 		sharedLayers:     common.NewSharedLayers(),
@@ -32,7 +32,7 @@ type Collector struct {
 	cancelCtx  context.Context
 	cancelFunc context.CancelFunc
 
-	listenChan       chan *common.FragElement
+	fragmentChan     chan *common.FragElement
 	fragElemGroupMap map[def.FragGroupID]*common.FragElementGroup
 	ptrFullPktQueue  *linkqueue.LinkQueue
 	sharedLayers     *common.SharedLayers
@@ -68,11 +68,11 @@ loopExit:
 				t.sharedLayers.Reset()
 			}
 			break
-		case clsData, ok := <-t.listenChan:
+		case frag, ok := <-t.fragmentChan:
 			if !ok {
 				break loopExit
 			}
-			if err := t.accept(clsData); err != nil {
+			if err := t.accept(frag); err != nil {
 				// todo
 			}
 			break
@@ -173,5 +173,5 @@ func (t *Collector) checkAndReassembly(fragElemGroup *common.FragElementGroup, f
 }
 
 func (t *Collector) pushFragmentElement(fragElem *common.FragElement) {
-	t.listenChan <- fragElem
+	t.fragmentChan <- fragElem
 }

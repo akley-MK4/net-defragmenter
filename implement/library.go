@@ -91,7 +91,7 @@ func (t *Library) AsyncProcessPacket(interfaceId def.InterfaceId, pktData []byte
 	}
 
 	var detectInfo def.DetectionInfo
-	defer detectInfo.Rest()
+	defer detectInfo.Reset()
 
 	if err := t.detector.FastDetect(interfaceId, pktData, &detectInfo); err != nil {
 		return err
