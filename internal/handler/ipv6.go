@@ -21,7 +21,9 @@ func (t *IPV6Handler) FastDetect(detectInfo *def.DetectionInfo) (retErr error, r
 
 	buf := detectInfo.EthPayload
 	buf = buf[def.IPVersionLen+def.IPV6TrafficClassFlowLabelLen+def.IPV6PayloadLen:]
-	if layers.IPProtocol(buf[0]) != layers.IPProtocolIPv6Fragment {
+	ipProtocol := layers.IPProtocol(buf[0])
+	if ipProtocol != layers.IPProtocolIPv6Fragment {
+		detectInfo.IPProtocol = ipProtocol
 		return
 	}
 
