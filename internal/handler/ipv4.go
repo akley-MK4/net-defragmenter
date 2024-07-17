@@ -3,6 +3,7 @@ package handler
 import (
 	"container/list"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	def "github.com/akley-MK4/net-defragmenter/definition"
 	"github.com/akley-MK4/net-defragmenter/internal/common"
@@ -105,6 +106,7 @@ func (t *IPV4Handler) Reassembly(fragElemGroup *common.FragElementGroup,
 func collectFragElement(fragElem *common.FragElement, fragElemGroup *common.FragElementGroup) (error, def.ErrResultType) {
 	fragOffset := fragElem.FragOffset * def.FragOffsetMulNum
 	if fragOffset >= fragElemGroup.GetHighest() {
+		fragElem.Grouped = true
 		fragElemGroup.PushElementToBack(fragElem)
 	} else {
 		fragElemGroup.IterElementList(func(elem *list.Element) bool {
@@ -114,11 +116,16 @@ func collectFragElement(fragElem *common.FragElement, fragElemGroup *common.Frag
 				return false
 			}
 			if exitElem.FragOffset > fragElem.FragOffset {
+				fragElem.Grouped = true
 				fragElemGroup.InsertElementToBefore(fragElem, elem)
 				return false
 			}
 			return true
 		})
+	}
+
+	if !fragElem.Grouped {
+		return errors.New("ungrouped fragments"), def.ErrResultUngroupedFrag
 	}
 
 	fragLength := uint16(fragElem.PayloadBuf.Len())
