@@ -16,6 +16,8 @@ type LayerPktErrStats struct {
 	TotalIPV6HdrLenInsufficientNum     uint64
 	TotalIPV6FragHdrLenInsufficientNum uint64
 
+	TotalErrResultUngroupedFragNum uint64
+
 	TotalUnhandledErrNum uint64
 }
 
@@ -36,6 +38,8 @@ func (t *LayerPktErrStats) AddTotalNum(delta uint64, errResultType def.ErrResult
 		updNum = &t.TotalIPV6HdrLenInsufficientNum
 	case def.ErrResultIPV6FragHdrLenInsufficient:
 		updNum = &t.TotalIPV6FragHdrLenInsufficientNum
+	case def.ErrResultUngroupedFrag:
+		updNum = &t.TotalErrResultUngroupedFragNum
 	default:
 		updNum = &t.TotalUnhandledErrNum
 	}

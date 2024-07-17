@@ -13,6 +13,7 @@ type ErrorStats struct {
 	TotalErrResultIPV6NetworkLayerNilNum        uint64 `json:"TotalErrResultIPV6NetworkLayerNilNum,omitempty"`
 	TotalErrResultIPV6HdrLenInsufficientNum     uint64 `json:"TotalErrResultIPV6HdrLenInsufficientNum,omitempty"`
 	TotalErrResultIPV6FragHdrLenInsufficientNum uint64 `json:"TotalErrResultIPV6FragHdrLenInsufficientNum,omitempty"`
+	TotalErrResultUngroupedFragNum              uint64 `json:",omitempty"`
 
 	TotalUnknownErrNum uint64 `json:"TotalUnknownErrNum,omitempty"`
 }
@@ -43,6 +44,9 @@ func (t *ErrorStats) AddTotalNum(delta uint64, errType def.ErrResultType) {
 		break
 	case def.ErrResultIPV6FragHdrLenInsufficient:
 		atomic.AddUint64(&t.TotalErrResultIPV6FragHdrLenInsufficientNum, delta)
+		break
+	case def.ErrResultUngroupedFrag:
+		atomic.AddUint64(&t.TotalErrResultUngroupedFragNum, delta)
 		break
 	default:
 		atomic.AddUint64(&t.TotalUnknownErrNum, delta)

@@ -23,6 +23,7 @@ type FragElement struct {
 	Identification uint32
 
 	PayloadBuf *bytes.Buffer
+	Grouped    bool
 }
 
 var (
@@ -40,7 +41,7 @@ func NewFragElement() *FragElement {
 	stats.GetCollectionStatsHandler().AddTotalNewFragElementsNum(1)
 	elem := fragElementObjectPool.Get().(*FragElement)
 	elem.PayloadBuf.Reset()
-
+	elem.Grouped = false
 	return elem
 }
 
@@ -158,12 +159,12 @@ func (t *FragElementGroup) cleanUpElementList() int {
 		elems = append(elems, e)
 	}
 	for _, elem := range elems {
-		t.elemList.Remove(elem)
-		if elem.Value == nil {
+		v := t.elemList.Remove(elem)
+		if v == nil {
 			continue
 		}
 
-		fragElem, ok := elem.Value.(*FragElement)
+		fragElem, ok := v.(*FragElement)
 		if !ok {
 			continue
 		}

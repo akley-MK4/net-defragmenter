@@ -37,7 +37,7 @@ func printMemoryStatus(snapshot memorySnapshot) {
 }
 
 func printStats() {
-	d, _ := json.Marshal(stats.GetStats())
+	d, _ := json.MarshalIndent(stats.GetStats(), "", " ")
 	log.Println("=============stats==================")
 	fmt.Println(string(d))
 	log.Println("====================================")

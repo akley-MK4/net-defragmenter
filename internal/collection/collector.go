@@ -112,6 +112,7 @@ func (t *Collector) accept(fragElem *common.FragElement) error {
 
 	hd := handler.GetHandler(fragElem.Type)
 	if hd == nil {
+		common.RecycleFragElement(fragElem)
 		statsHandler.AddTotalNotFoundHandlersNum(1)
 		return fmt.Errorf("handler with fragment type %v dose not exists", fragElem.Type)
 	}
@@ -124,6 +125,7 @@ func (t *Collector) accept(fragElem *common.FragElement) error {
 
 	collectErr, collectErrType := hd.Collect(fragElem, fragElemGroup)
 	if collectErr != nil {
+		common.RecycleFragElement(fragElem)
 		statsHandler.AddTotalErrCollectNum(1, collectErrType)
 		return collectErr
 	}
