@@ -35,6 +35,9 @@ func NewCollectorMgr(opt def.CollectorOption) (*CollectorMgr, error) {
 	if opt.MaxFullPktQueueLen <= 0 {
 		return nil, errors.New("the maxFullPktQueueLen parameter is less than or equal to 0")
 	}
+	if opt.MaxFragGroupMapLength <= 0 {
+		return nil, errors.New("the MaxFragGroupMapLength parameter is less than or equal to 0")
+	}
 	if opt.MaxFragGroupDurationSeconds > 0 {
 		maxFragGroupDurationSec = opt.MaxFragGroupDurationSeconds
 	}
@@ -42,7 +45,7 @@ func NewCollectorMgr(opt def.CollectorOption) (*CollectorMgr, error) {
 	fullPktQueue := linkqueue.NewLinkQueue()
 	collectors := make([]*Collector, 0, opt.MaxCollectorsNum)
 	for i := 0; i < int(opt.MaxCollectorsNum); i++ {
-		collectors = append(collectors, newCollector(uint32(i), opt.MaxChannelCap, fullPktQueue))
+		collectors = append(collectors, newCollector(uint32(i), opt.MaxChannelCap, opt.MaxFragGroupMapLength, fullPktQueue))
 	}
 
 	mgr := &CollectorMgr{

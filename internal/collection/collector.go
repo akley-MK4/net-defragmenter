@@ -2,6 +2,7 @@ package collection
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	def "github.com/akley-MK4/net-defragmenter/definition"
 	"github.com/akley-MK4/net-defragmenter/internal/common"
@@ -13,17 +14,22 @@ import (
 	"time"
 )
 
-func newCollector(id, maxListenChanCap uint32, ptrFullPktQueue *linkqueue.LinkQueue) *Collector {
+var (
+	ErrFragGroupMapReachedLenLimit = errors.New("reached the maximum length limit")
+)
+
+func newCollector(id, maxListenChanCap, maxFragGroupMapLength uint32, ptrFullPktQueue *linkqueue.LinkQueue) *Collector {
 
 	cancelCtx, cancelFunc := context.WithCancel(context.Background())
 	return &Collector{
-		id:               id,
-		cancelCtx:        cancelCtx,
-		cancelFunc:       cancelFunc,
-		fragmentChan:     make(chan *common.FragElement, maxListenChanCap),
-		fragElemGroupMap: make(map[def.FragGroupID]*common.FragElementGroup),
-		ptrFullPktQueue:  ptrFullPktQueue,
-		sharedLayers:     common.NewSharedLayers(),
+		id:                    id,
+		cancelCtx:             cancelCtx,
+		cancelFunc:            cancelFunc,
+		fragmentChan:          make(chan *common.FragElement, maxListenChanCap),
+		fragElemGroupMap:      make(map[def.FragGroupID]*common.FragElementGroup),
+		maxFragGroupMapLength: int(maxFragGroupMapLength),
+		ptrFullPktQueue:       ptrFullPktQueue,
+		sharedLayers:          common.NewSharedLayers(),
 	}
 }
 
@@ -32,10 +38,11 @@ type Collector struct {
 	cancelCtx  context.Context
 	cancelFunc context.CancelFunc
 
-	fragmentChan     chan *common.FragElement
-	fragElemGroupMap map[def.FragGroupID]*common.FragElementGroup
-	ptrFullPktQueue  *linkqueue.LinkQueue
-	sharedLayers     *common.SharedLayers
+	fragmentChan          chan *common.FragElement
+	fragElemGroupMap      map[def.FragGroupID]*common.FragElementGroup
+	maxFragGroupMapLength int
+	ptrFullPktQueue       *linkqueue.LinkQueue
+	sharedLayers          *common.SharedLayers
 }
 
 func (t *Collector) start() error {
@@ -119,6 +126,12 @@ func (t *Collector) accept(fragElem *common.FragElement) error {
 
 	fragElemGroup, exist := t.fragElemGroupMap[fragElem.GroupID]
 	if !exist {
+		if len(t.fragElemGroupMap) >= t.maxFragGroupMapLength {
+			common.RecycleFragElement(fragElem)
+			statsHandler.IncTotalFragMapReachedLenLimitNum()
+			return ErrFragGroupMapReachedLenLimit
+		}
+
 		t.fragElemGroupMap[fragElem.GroupID] = common.NewFragElementGroup(fragElem.GroupID)
 		fragElemGroup = t.fragElemGroupMap[fragElem.GroupID]
 	}

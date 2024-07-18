@@ -9,28 +9,29 @@ type CollectionStats struct {
 	//TotalSuccessfulStartedCollectorsNum uint64
 	//TotalFailedStartCollectorsNum       uint64
 
-	TotalFailedDistributionMemberNum uint64 `json:"TotalFailedDistributionMemberNum,omitempty"`
-	TotalNewFragElementsNum          uint64 `json:"TotalNewFragElementsNum,omitempty"`
-	TotalAllocatedFragElementsNum    uint64 `json:"TotalAllocatedFragElementsNum,omitempty"`
-	TotalRecycledFragElementsNum     uint64 `json:"TotalRecycledFragElementsNum,omitempty"`
+	TotalFailedDistributionMemberNum uint64 `json:",omitempty"`
+	TotalNewFragElementsNum          uint64 `json:",omitempty"`
+	TotalAllocatedFragElementsNum    uint64 `json:",omitempty"`
+	TotalRecycledFragElementsNum     uint64 `json:",omitempty"`
 
-	TotalAcceptedFragElementsNum uint64 `json:"TotalAcceptedFragElementsNum,omitempty"`
-	TotalNotFoundHandlersNum     uint64 `json:"TotalNotFoundHandlersNum,omitempty"`
+	TotalAcceptedFragElementsNum   uint64 `json:",omitempty"`
+	TotalNotFoundHandlersNum       uint64 `json:",omitempty"`
+	TotalFragMapReachedLenLimitNum uint64 `json:",omitempty"`
 
-	TotalNewFragElementGroupsNum             uint64 `json:"TotalNewFragElementGroupsNum,omitempty"`
-	TotalReleasedFragElementGroupsNum        uint64 `json:"TotalReleasedFragElementGroupsNum,omitempty"`
-	TotalReleasedExpiredFragElementGroupsNum uint64 `json:"TotalReleasedExpiredFragElementGroupsNum,omitempty"`
+	TotalNewFragElementGroupsNum             uint64 `json:",omitempty"`
+	TotalReleasedFragElementGroupsNum        uint64 `json:",omitempty"`
+	TotalReleasedExpiredFragElementGroupsNum uint64 `json:",omitempty"`
 
-	ErrorHandlerCollectStats         ErrorStats `json:"ErrorHandlerCollectStats,omitempty"`
-	TotalSuccessfulCollectedFragsNum uint64     `json:"TotalSuccessfulCollectedFragsNum,omitempty"`
+	ErrorHandlerCollectStats         ErrorStats `json:",omitempty"`
+	TotalSuccessfulCollectedFragsNum uint64     `json:",omitempty"`
 
-	TotalReassemblyNoDelFragGroupsNum uint64     `json:"TotalReassemblyNoDelFragGroupsNum,omitempty"`
-	ErrHandlerReassemblyStats         ErrorStats `json:"ErrHandlerReassemblyStats,omitempty"`
-	TotalSuccessfulReassemblyFragsNum uint64     `json:"TotalSuccessfulReassemblyFragsNum,omitempty"`
-	TotalPushedFullPacketsNum         uint64     `json:"TotalPushedFullPacketsNum,omitempty"`
-	TotalReleasedFullPacketsNum       uint64     `json:"TotalReleasedFullPacketsNum,omitempty"`
-	TotalForceReleasedFullPacketsNum  uint64     `json:"TotalForceReleasedFullPacketsNum,omitempty"`
-	TotalPoppedFullPacketsNum         uint64     `json:"TotalPoppedFullPacketsNum,omitempty"`
+	TotalReassemblyNoDelFragGroupsNum uint64     `json:",omitempty"`
+	ErrHandlerReassemblyStats         ErrorStats `json:",omitempty"`
+	TotalSuccessfulReassemblyFragsNum uint64     `json:",omitempty"`
+	TotalPushedFullPacketsNum         uint64     `json:",omitempty"`
+	TotalReleasedFullPacketsNum       uint64     `json:",omitempty"`
+	TotalForceReleasedFullPacketsNum  uint64     `json:",omitempty"`
+	TotalPoppedFullPacketsNum         uint64     `json:",omitempty"`
 }
 
 var (
@@ -103,6 +104,13 @@ func (t *CollectionStatsHandler) AddTotalNotFoundHandlersNum(delta uint64) {
 		return
 	}
 	atomic.AddUint64(&t.stats.TotalNotFoundHandlersNum, delta)
+}
+
+func (t *CollectionStatsHandler) IncTotalFragMapReachedLenLimitNum() {
+	if !enabledStats {
+		return
+	}
+	atomic.AddUint64(&t.stats.TotalFragMapReachedLenLimitNum, 1)
 }
 
 func (t *CollectionStatsHandler) AddTotalNewFragElementGroupsNum(delta uint64) {
