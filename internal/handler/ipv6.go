@@ -28,6 +28,8 @@ func (t *IPV6Handler) FastDetect(detectInfo *def.DetectionInfo) (retErr error, r
 	}
 
 	detectInfo.FragType = def.IPV6FragType
+	detectInfo.TrafficClass = uint8((binary.BigEndian.Uint16(detectInfo.EthPayload[0:2]) >> 4) & 0x00FF)
+	detectInfo.FlowLabel = binary.BigEndian.Uint32(detectInfo.EthPayload[0:4]) & 0x000FFFFF
 
 	buf = buf[def.IPV6NextHeaderLen+def.IPV6HopLimitLen:]
 	detectInfo.SrcIP = buf[:def.IPV6SrcAddrLen]
@@ -70,6 +72,8 @@ func (t *IPV6Handler) Reassembly(fragElemGroup *common.FragElementGroup,
 	sharedLayers.EthFrame.EthernetType = layers.EthernetTypeIPv6
 
 	sharedLayers.IPV6.Length = payloadLen
+	sharedLayers.IPV6.TrafficClass = finalElem.TrafficClass
+	sharedLayers.IPV6.FlowLabel = finalElem.FlowLabel
 	sharedLayers.IPV6.NextHeader = finalElem.IPProtocol
 	sharedLayers.IPV6.SrcIP = finalElem.SrcIP
 	sharedLayers.IPV6.DstIP = finalElem.DstIP

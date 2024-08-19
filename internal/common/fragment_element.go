@@ -17,6 +17,9 @@ type FragElement struct {
 
 	SrcMAC, DstMAC []byte
 	SrcIP, DstIP   []byte
+	TOS            uint8
+	TrafficClass   uint8
+	FlowLabel      uint32
 	IPProtocol     layers.IPProtocol
 	FragOffset     uint16
 	MoreFrags      bool
