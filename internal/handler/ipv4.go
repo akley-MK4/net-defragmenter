@@ -21,6 +21,7 @@ func (t *IPV4Handler) FastDetect(detectInfo *def.DetectionInfo) (retErr error, r
 	}
 
 	buf := detectInfo.EthPayload
+	detectInfo.TOS = buf[def.IPVersionLen]
 	buf = buf[def.IPVersionLen+def.IPV4DifferentiatedSvcFieldLen+def.IPV4TotalLengthFieldLen:]
 	detectInfo.Identification = uint32(binary.BigEndian.Uint16(buf))
 	buf = buf[def.IPV4IdentificationLen:]
@@ -66,6 +67,7 @@ func (t *IPV4Handler) Reassembly(fragElemGroup *common.FragElementGroup,
 
 	sharedLayers.IPV4.Id = uint16(finalElem.Identification)
 	sharedLayers.IPV4.Length = payloadLen
+	sharedLayers.IPV4.TOS = finalElem.TOS
 	sharedLayers.IPV4.Protocol = finalElem.IPProtocol
 	sharedLayers.IPV4.SrcIP = finalElem.SrcIP
 	sharedLayers.IPV4.DstIP = finalElem.DstIP

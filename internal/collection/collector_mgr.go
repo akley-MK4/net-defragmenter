@@ -162,6 +162,9 @@ func setFragElement(fragElem *common.FragElement, detectInfo *def.DetectionInfo)
 	fragElem.InterfaceId = detectInfo.InterfaceId
 	fragElem.FragOffset = detectInfo.FragOffset
 	fragElem.MoreFrags = detectInfo.MoreFrags
+	fragElem.TOS = detectInfo.TOS
+	fragElem.TrafficClass = detectInfo.TrafficClass
+	fragElem.FlowLabel = detectInfo.FlowLabel
 	fragElem.Identification = detectInfo.Identification
 	fragElem.PayloadBuf.Write(detectInfo.IPPayload)
 
