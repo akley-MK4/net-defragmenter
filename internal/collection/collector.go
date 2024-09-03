@@ -3,6 +3,8 @@ package collection
 import (
 	"context"
 	"fmt"
+	"time"
+
 	def "github.com/akley-MK4/net-defragmenter/definition"
 	"github.com/akley-MK4/net-defragmenter/internal/common"
 	"github.com/akley-MK4/net-defragmenter/internal/handler"
@@ -10,7 +12,6 @@ import (
 	"github.com/akley-MK4/net-defragmenter/stats"
 	PCD "github.com/akley-MK4/pep-coroutine/define"
 	PCI "github.com/akley-MK4/pep-coroutine/implement"
-	"time"
 )
 
 func newCollector(id, maxListenChanCap uint32, ptrFullPktQueue *linkqueue.LinkQueue) *Collector {
@@ -167,6 +168,7 @@ func (t *Collector) checkAndReassembly(fragElemGroup *common.FragElementGroup, f
 		InterfaceId: fragElem.InterfaceId,
 		FragGroupID: fragElem.GroupID,
 		Pkt:         pkt,
+		FragElemLen: fragElemListLen,
 	})
 
 	return nil
