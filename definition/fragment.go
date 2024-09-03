@@ -1,9 +1,10 @@
 package definition
 
 import (
+	"net"
+
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
-	"net"
 )
 
 type FragType int8
@@ -33,6 +34,7 @@ type FullPacket struct {
 	InterfaceId InterfaceId
 	FragGroupID FragGroupID
 	Pkt         gopacket.Packet
+	FragElemLen int
 }
 
 func (t *FullPacket) GetInterfaceId() InterfaceId {
