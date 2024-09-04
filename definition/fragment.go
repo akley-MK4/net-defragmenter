@@ -31,10 +31,10 @@ var (
 type OnDetectCompleted func(fragType FragType, fragGroupID FragGroupID)
 
 type FullPacket struct {
-	InterfaceId InterfaceId
-	FragGroupID FragGroupID
-	Pkt         gopacket.Packet
-	FragElemLen int
+	InterfaceId  InterfaceId
+	FragGroupID  FragGroupID
+	Pkt          gopacket.Packet
+	FragElemsNum int
 }
 
 func (t *FullPacket) GetInterfaceId() InterfaceId {
