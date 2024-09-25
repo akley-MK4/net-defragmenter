@@ -6,15 +6,16 @@ import (
 )
 
 type ErrorStats struct {
-	TotalErrResultTypeNewPacketsNum             uint64 `json:"TotalErrResultTypeNewPacketsNum,omitempty"`
-	TotalErrResultSerializeLayersNum            uint64 `json:"TotalErrResultSerializeLayersNum,omitempty"`
-	TotalErrResultFullPacketBufAppendBytes      uint64 `json:"TotalErrResultFullPacketBufAppendBytes,omitempty"`
-	TotalErrResultIPV4HdrLenInsufficientNum     uint64 `json:"TotalErrResultIPV4HdrLenInsufficientNum,omitempty"`
-	TotalErrResultIPV6NetworkLayerNilNum        uint64 `json:"TotalErrResultIPV6NetworkLayerNilNum,omitempty"`
-	TotalErrResultIPV6HdrLenInsufficientNum     uint64 `json:"TotalErrResultIPV6HdrLenInsufficientNum,omitempty"`
-	TotalErrResultIPV6FragHdrLenInsufficientNum uint64 `json:"TotalErrResultIPV6FragHdrLenInsufficientNum,omitempty"`
+	TotalErrResultTypeNewPacketsNum             uint64 `json:",omitempty"`
+	TotalErrResultSerializeLayersNum            uint64 `json:",omitempty"`
+	TotalErrResultFullPacketBufAppendBytes      uint64 `json:",omitempty"`
+	TotalErrResultIPV4HdrLenInsufficientNum     uint64 `json:",omitempty"`
+	TotalErrResultIPV6NetworkLayerNilNum        uint64 `json:",omitempty"`
+	TotalErrResultIPV6HdrLenInsufficientNum     uint64 `json:",omitempty"`
+	TotalErrResultIPV6FragHdrLenInsufficientNum uint64 `json:",omitempty"`
+	TotalErrResultUngroupedFragNum              uint64 `json:",omitempty"`
 
-	TotalUnknownErrNum uint64 `json:"TotalUnknownErrNum,omitempty"`
+	TotalUnknownErrNum uint64 `json:",omitempty"`
 }
 
 func (t *ErrorStats) AddTotalNum(delta uint64, errType def.ErrResultType) {
@@ -43,6 +44,9 @@ func (t *ErrorStats) AddTotalNum(delta uint64, errType def.ErrResultType) {
 		break
 	case def.ErrResultIPV6FragHdrLenInsufficient:
 		atomic.AddUint64(&t.TotalErrResultIPV6FragHdrLenInsufficientNum, delta)
+		break
+	case def.ErrResultUngroupedFrag:
+		atomic.AddUint64(&t.TotalErrResultUngroupedFragNum, delta)
 		break
 	default:
 		atomic.AddUint64(&t.TotalUnknownErrNum, delta)

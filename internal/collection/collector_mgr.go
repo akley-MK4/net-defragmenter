@@ -36,6 +36,9 @@ func NewCollectorMgr(opt def.CollectorOption) (*CollectorMgr, error) {
 	if opt.MaxFullPktQueueLen <= 0 {
 		return nil, errors.New("the maxFullPktQueueLen parameter is less than or equal to 0")
 	}
+	if opt.MaxFragGroupMapLength <= 0 {
+		return nil, errors.New("the MaxFragGroupMapLength parameter is less than or equal to 0")
+	}
 	if opt.MaxFragGroupDurationSeconds > 0 {
 		maxFragGroupDurationSec = opt.MaxFragGroupDurationSeconds
 	}
@@ -43,7 +46,7 @@ func NewCollectorMgr(opt def.CollectorOption) (*CollectorMgr, error) {
 	fullPktQueue := linkqueue.NewLinkQueue()
 	collectors := make([]*Collector, 0, opt.MaxCollectorsNum)
 	for i := 0; i < int(opt.MaxCollectorsNum); i++ {
-		collectors = append(collectors, newCollector(uint32(i), opt.MaxChannelCap, fullPktQueue, opt.EnableSyncReassembly))
+		collectors = append(collectors, newCollector(uint32(i), opt.MaxChannelCap, opt.MaxFragGroupMapLength, fullPktQueue, opt.EnableSyncReassembly))
 	}
 
 	mgr := &CollectorMgr{
@@ -187,6 +190,9 @@ func setFragElement(fragElem *common.FragElement, detectInfo *def.DetectionInfo)
 	fragElem.InterfaceId = detectInfo.InterfaceId
 	fragElem.FragOffset = detectInfo.FragOffset
 	fragElem.MoreFrags = detectInfo.MoreFrags
+	fragElem.TOS = detectInfo.TOS
+	fragElem.TrafficClass = detectInfo.TrafficClass
+	fragElem.FlowLabel = detectInfo.FlowLabel
 	fragElem.Identification = detectInfo.Identification
 	fragElem.PayloadBuf.Write(detectInfo.IPPayload)
 

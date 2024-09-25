@@ -14,10 +14,18 @@ type CollectionStats struct {
 	TotalNewFragElementsNum          uint64 `json:",omitempty"`
 	TotalAllocatedFragElementsNum    uint64 `json:",omitempty"`
 	TotalRecycledFragElementsNum     uint64 `json:",omitempty"`
+	TotalFailedDistributionMemberNum uint64 `json:",omitempty"`
+	TotalNewFragElementsNum          uint64 `json:",omitempty"`
+	TotalAllocatedFragElementsNum    uint64 `json:",omitempty"`
+	TotalRecycledFragElementsNum     uint64 `json:",omitempty"`
 
-	TotalAcceptedFragElementsNum uint64 `json:",omitempty"`
-	TotalNotFoundHandlersNum     uint64 `json:",omitempty"`
+	TotalAcceptedFragElementsNum   uint64 `json:",omitempty"`
+	TotalNotFoundHandlersNum       uint64 `json:",omitempty"`
+	TotalFragMapReachedLenLimitNum uint64 `json:",omitempty"`
 
+	TotalNewFragElementGroupsNum             uint64 `json:",omitempty"`
+	TotalReleasedFragElementGroupsNum        uint64 `json:",omitempty"`
+	TotalReleasedExpiredFragElementGroupsNum uint64 `json:",omitempty"`
 	TotalNewFragElementGroupsNum             uint64 `json:",omitempty"`
 	TotalReleasedFragElementGroupsNum        uint64 `json:",omitempty"`
 	TotalReleasedExpiredFragElementGroupsNum uint64 `json:",omitempty"`
@@ -104,6 +112,13 @@ func (t *CollectionStatsHandler) AddTotalNotFoundHandlersNum(delta uint64) {
 		return
 	}
 	atomic.AddUint64(&t.stats.TotalNotFoundHandlersNum, delta)
+}
+
+func (t *CollectionStatsHandler) IncTotalFragMapReachedLenLimitNum() {
+	if !enabledStats {
+		return
+	}
+	atomic.AddUint64(&t.stats.TotalFragMapReachedLenLimitNum, 1)
 }
 
 func (t *CollectionStatsHandler) AddTotalNewFragElementGroupsNum(delta uint64) {

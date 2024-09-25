@@ -2,6 +2,7 @@ package collection
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -15,18 +16,23 @@ import (
 	PCI "github.com/akley-MK4/pep-coroutine/implement"
 )
 
-func newCollector(id, maxListenChanCap uint32, ptrFullPktQueue *linkqueue.LinkQueue, enableSyncReassembly bool) *Collector {
+var (
+	ErrFragGroupMapReachedLenLimit = errors.New("reached the maximum length limit")
+)
+
+func newCollector(id, maxListenChanCap, maxFragGroupMapLength uint32, ptrFullPktQueue *linkqueue.LinkQueue, enableSyncReassembly bool) *Collector {
 
 	cancelCtx, cancelFunc := context.WithCancel(context.Background())
 	return &Collector{
-		id:                   id,
-		cancelCtx:            cancelCtx,
-		cancelFunc:           cancelFunc,
-		fragmentChan:         make(chan *common.FragElement, maxListenChanCap),
-		fragElemGroupMap:     make(map[def.FragGroupID]*common.FragElementGroup),
-		ptrFullPktQueue:      ptrFullPktQueue,
-		sharedLayers:         common.NewSharedLayers(),
-		enableSyncReassembly: enableSyncReassembly,
+		id:                    id,
+		cancelCtx:             cancelCtx,
+		cancelFunc:            cancelFunc,
+		fragmentChan:          make(chan *common.FragElement, maxListenChanCap),
+		fragElemGroupMap:      make(map[def.FragGroupID]*common.FragElementGroup),
+		maxFragGroupMapLength: int(maxFragGroupMapLength),
+		ptrFullPktQueue:       ptrFullPktQueue,
+		sharedLayers:          common.NewSharedLayers(),
+		enableSyncReassembly:  enableSyncReassembly,
 	}
 }
 
@@ -35,10 +41,11 @@ type Collector struct {
 	cancelCtx  context.Context
 	cancelFunc context.CancelFunc
 
-	fragmentChan     chan *common.FragElement
-	fragElemGroupMap map[def.FragGroupID]*common.FragElementGroup
-	ptrFullPktQueue  *linkqueue.LinkQueue
-	sharedLayers     *common.SharedLayers
+	fragmentChan          chan *common.FragElement
+	fragElemGroupMap      map[def.FragGroupID]*common.FragElementGroup
+	maxFragGroupMapLength int
+	ptrFullPktQueue       *linkqueue.LinkQueue
+	sharedLayers          *common.SharedLayers
 
 	enableSyncReassembly bool
 	syncReassemblyMutex  sync.RWMutex
@@ -123,6 +130,7 @@ func (t *Collector) accept(fragElem *common.FragElement) (*def.FullPacket, error
 
 	hd := handler.GetHandler(fragElem.Type)
 	if hd == nil {
+		common.RecycleFragElement(fragElem)
 		statsHandler.AddTotalNotFoundHandlersNum(1)
 		return nil, fmt.Errorf("handler with fragment type %v dose not exists", fragElem.Type)
 	}
@@ -132,6 +140,12 @@ func (t *Collector) accept(fragElem *common.FragElement) (*def.FullPacket, error
 	}
 	fragElemGroup, exist := t.fragElemGroupMap[fragElem.GroupID]
 	if !exist {
+		if len(t.fragElemGroupMap) >= t.maxFragGroupMapLength {
+			common.RecycleFragElement(fragElem)
+			statsHandler.IncTotalFragMapReachedLenLimitNum()
+			return nil, ErrFragGroupMapReachedLenLimit
+		}
+
 		t.fragElemGroupMap[fragElem.GroupID] = common.NewFragElementGroup(fragElem.GroupID)
 		fragElemGroup = t.fragElemGroupMap[fragElem.GroupID]
 	}
@@ -141,6 +155,7 @@ func (t *Collector) accept(fragElem *common.FragElement) (*def.FullPacket, error
 
 	collectErr, collectErrType := hd.Collect(fragElem, fragElemGroup)
 	if collectErr != nil {
+		common.RecycleFragElement(fragElem)
 		statsHandler.AddTotalErrCollectNum(1, collectErrType)
 		return nil, collectErr
 	}

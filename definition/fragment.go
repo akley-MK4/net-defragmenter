@@ -55,6 +55,9 @@ type DetectionInfo struct {
 	EthPayload     []byte
 
 	SrcIP, DstIP   net.IP
+	TrafficClass   uint8
+	FlowLabel      uint32
+	TOS            uint8
 	IPProtocol     layers.IPProtocol
 	FragType       FragType
 	FragOffset     uint16

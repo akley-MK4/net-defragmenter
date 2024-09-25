@@ -22,6 +22,7 @@ type IPV6WorkerOption struct {
 type CollectorOption struct {
 	MaxCollectorsNum            uint32
 	MaxChannelCap               uint32
+	MaxFragGroupMapLength       uint32
 	MaxFullPktQueueLen          uint32
 	MaxFragGroupDurationSeconds int64
 	EnableSyncReassembly        bool
