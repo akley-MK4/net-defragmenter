@@ -24,6 +24,7 @@ type CollectorOption struct {
 	MaxChannelCap               uint32
 	MaxFullPktQueueLen          uint32
 	MaxFragGroupDurationSeconds int64
+	EnableSyncReassembly        bool
 }
 
 type StatsOption struct {

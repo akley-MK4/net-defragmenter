@@ -1,36 +1,37 @@
 package stats
 
 import (
-	def "github.com/akley-MK4/net-defragmenter/definition"
 	"sync/atomic"
+
+	def "github.com/akley-MK4/net-defragmenter/definition"
 )
 
 type CollectionStats struct {
 	//TotalSuccessfulStartedCollectorsNum uint64
 	//TotalFailedStartCollectorsNum       uint64
 
-	TotalFailedDistributionMemberNum uint64 `json:"TotalFailedDistributionMemberNum,omitempty"`
-	TotalNewFragElementsNum          uint64 `json:"TotalNewFragElementsNum,omitempty"`
-	TotalAllocatedFragElementsNum    uint64 `json:"TotalAllocatedFragElementsNum,omitempty"`
-	TotalRecycledFragElementsNum     uint64 `json:"TotalRecycledFragElementsNum,omitempty"`
+	TotalFailedDistributionMemberNum uint64 `json:",omitempty"`
+	TotalNewFragElementsNum          uint64 `json:",omitempty"`
+	TotalAllocatedFragElementsNum    uint64 `json:",omitempty"`
+	TotalRecycledFragElementsNum     uint64 `json:",omitempty"`
 
-	TotalAcceptedFragElementsNum uint64 `json:"TotalAcceptedFragElementsNum,omitempty"`
-	TotalNotFoundHandlersNum     uint64 `json:"TotalNotFoundHandlersNum,omitempty"`
+	TotalAcceptedFragElementsNum uint64 `json:",omitempty"`
+	TotalNotFoundHandlersNum     uint64 `json:",omitempty"`
 
-	TotalNewFragElementGroupsNum             uint64 `json:"TotalNewFragElementGroupsNum,omitempty"`
-	TotalReleasedFragElementGroupsNum        uint64 `json:"TotalReleasedFragElementGroupsNum,omitempty"`
-	TotalReleasedExpiredFragElementGroupsNum uint64 `json:"TotalReleasedExpiredFragElementGroupsNum,omitempty"`
+	TotalNewFragElementGroupsNum             uint64 `json:",omitempty"`
+	TotalReleasedFragElementGroupsNum        uint64 `json:",omitempty"`
+	TotalReleasedExpiredFragElementGroupsNum uint64 `json:",omitempty"`
 
-	ErrorHandlerCollectStats         ErrorStats `json:"ErrorHandlerCollectStats,omitempty"`
-	TotalSuccessfulCollectedFragsNum uint64     `json:"TotalSuccessfulCollectedFragsNum,omitempty"`
+	ErrorHandlerCollectStats ErrorStats `json:",omitempty"`
+	TotalCollectedFragsNum   uint64     `json:",omitempty"`
 
-	TotalReassemblyNoDelFragGroupsNum uint64     `json:"TotalReassemblyNoDelFragGroupsNum,omitempty"`
-	ErrHandlerReassemblyStats         ErrorStats `json:"ErrHandlerReassemblyStats,omitempty"`
-	TotalSuccessfulReassemblyFragsNum uint64     `json:"TotalSuccessfulReassemblyFragsNum,omitempty"`
-	TotalPushedFullPacketsNum         uint64     `json:"TotalPushedFullPacketsNum,omitempty"`
-	TotalReleasedFullPacketsNum       uint64     `json:"TotalReleasedFullPacketsNum,omitempty"`
-	TotalForceReleasedFullPacketsNum  uint64     `json:"TotalForceReleasedFullPacketsNum,omitempty"`
-	TotalPoppedFullPacketsNum         uint64     `json:"TotalPoppedFullPacketsNum,omitempty"`
+	TotalReassemblyNoDelFragGroupsNum uint64     `json:",omitempty"`
+	ErrHandlerReassemblyStats         ErrorStats `json:",omitempty"`
+	TotalReassemblyFragsNum           uint64     `json:",omitempty"`
+	TotalReassemblyFullPacketsNum     uint64     `json:",omitempty"`
+	TotalReleasedFullPacketsNum       uint64     `json:",omitempty"`
+	TotalForceReleasedFullPacketsNum  uint64     `json:",omitempty"`
+	TotalPoppedFullPacketsNum         uint64     `json:",omitempty"`
 }
 
 var (
@@ -141,18 +142,18 @@ func (t *CollectionStatsHandler) AddTotalReassemblyNoDelFragGroupsNum(delta uint
 	atomic.AddUint64(&t.stats.TotalReassemblyNoDelFragGroupsNum, delta)
 }
 
-func (t *CollectionStatsHandler) AddTotalSuccessfulReassemblyFragsNum(delta uint64) {
+func (t *CollectionStatsHandler) AddTotalReassemblyFragsNum(delta uint64) {
 	if !enabledStats {
 		return
 	}
-	atomic.AddUint64(&t.stats.TotalSuccessfulReassemblyFragsNum, delta)
+	atomic.AddUint64(&t.stats.TotalReassemblyFragsNum, delta)
 }
 
-func (t *CollectionStatsHandler) AddTotalPushedFullPacketsNum(delta uint64) {
+func (t *CollectionStatsHandler) AddTotalReassemblyFullPacketsNum(delta uint64) {
 	if !enabledStats {
 		return
 	}
-	atomic.AddUint64(&t.stats.TotalPushedFullPacketsNum, delta)
+	atomic.AddUint64(&t.stats.TotalReassemblyFullPacketsNum, delta)
 }
 
 func (t *CollectionStatsHandler) AddTotalForceReleasedFullPacketsNum(delta uint64) {
@@ -176,9 +177,9 @@ func (t *CollectionStatsHandler) AddTotalPoppedFullPacketsNum(delta uint64) {
 	atomic.AddUint64(&t.stats.TotalPoppedFullPacketsNum, delta)
 }
 
-func (t *CollectionStatsHandler) AddTotalSuccessfulCollectedFragsNum(delta uint64) {
+func (t *CollectionStatsHandler) AddTotalCollectedFragsNum(delta uint64) {
 	if !enabledStats {
 		return
 	}
-	atomic.AddUint64(&t.stats.TotalSuccessfulCollectedFragsNum, delta)
+	atomic.AddUint64(&t.stats.TotalCollectedFragsNum, delta)
 }

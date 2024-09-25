@@ -3,10 +3,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/akley-MK4/net-defragmenter/stats"
-	PCI "github.com/akley-MK4/pep-coroutine/implement"
 	"log"
 	"runtime"
+
+	"github.com/akley-MK4/net-defragmenter/stats"
+	PCI "github.com/akley-MK4/pep-coroutine/implement"
 )
 
 type memorySnapshot struct {
@@ -37,7 +38,7 @@ func printMemoryStatus(snapshot memorySnapshot) {
 }
 
 func printStats() {
-	d, _ := json.Marshal(stats.GetStats())
+	d, _ := json.MarshalIndent(stats.GetStats(), "", "  ")
 	log.Println("=============stats==================")
 	fmt.Println(string(d))
 	log.Println("====================================")
@@ -45,7 +46,7 @@ func printStats() {
 }
 
 func printPCIStats() {
-	d, _ := json.Marshal(PCI.FetchStats())
+	d, _ := json.MarshalIndent(PCI.FetchStats(), "", "  ")
 	log.Println("=============pep-coroutine-lib==================")
 	fmt.Println(string(d))
 	log.Println("====================================")

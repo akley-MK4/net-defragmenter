@@ -13,18 +13,8 @@ func getLibInstance() *implement.Library {
 	return libInstance
 }
 
-func initLibInstance() (retErr error) {
-	opt := def.NewOption(func(opt *def.Option) {
-		//opt.CtrlApiServerOption.Enable = true
-		opt.StatsOption.Enable = true
-
-		opt.PickFragmentTypes = []def.FragType{def.IPV4FragType, def.IPV6FragType}
-
-		opt.CollectorOption.MaxCollectorsNum = 30
-		opt.CollectorOption.MaxChannelCap = 2000
-		opt.CollectorOption.MaxFullPktQueueLen = 10000
-		opt.CollectorOption.MaxFragGroupDurationSeconds = 15
-	})
+func initLibInstance(fns ...func(opt *def.Option)) (retErr error) {
+	opt := def.NewOption(fns...)
 
 	libInstance, retErr = implement.NewLibraryInstance(opt)
 	if retErr != nil {
