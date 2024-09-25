@@ -142,6 +142,9 @@ func (t *Collector) accept(fragElem *common.FragElement) (*def.FullPacket, error
 	if !exist {
 		if len(t.fragElemGroupMap) >= t.maxFragGroupMapLength {
 			common.RecycleFragElement(fragElem)
+			if t.enableSyncReassembly {
+				t.syncReassemblyMutex.Unlock()
+			}
 			statsHandler.IncTotalFragMapReachedLenLimitNum()
 			return nil, ErrFragGroupMapReachedLenLimit
 		}
