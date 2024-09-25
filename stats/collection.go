@@ -14,18 +14,11 @@ type CollectionStats struct {
 	TotalNewFragElementsNum          uint64 `json:",omitempty"`
 	TotalAllocatedFragElementsNum    uint64 `json:",omitempty"`
 	TotalRecycledFragElementsNum     uint64 `json:",omitempty"`
-	TotalFailedDistributionMemberNum uint64 `json:",omitempty"`
-	TotalNewFragElementsNum          uint64 `json:",omitempty"`
-	TotalAllocatedFragElementsNum    uint64 `json:",omitempty"`
-	TotalRecycledFragElementsNum     uint64 `json:",omitempty"`
 
 	TotalAcceptedFragElementsNum   uint64 `json:",omitempty"`
 	TotalNotFoundHandlersNum       uint64 `json:",omitempty"`
 	TotalFragMapReachedLenLimitNum uint64 `json:",omitempty"`
 
-	TotalNewFragElementGroupsNum             uint64 `json:",omitempty"`
-	TotalReleasedFragElementGroupsNum        uint64 `json:",omitempty"`
-	TotalReleasedExpiredFragElementGroupsNum uint64 `json:",omitempty"`
 	TotalNewFragElementGroupsNum             uint64 `json:",omitempty"`
 	TotalReleasedFragElementGroupsNum        uint64 `json:",omitempty"`
 	TotalReleasedExpiredFragElementGroupsNum uint64 `json:",omitempty"`

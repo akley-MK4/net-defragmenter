@@ -8,13 +8,8 @@ import (
 
 type DetectionStats struct {
 	TotalReceivedDetectPacketsNum uint64 `json:",omitempty"`
-	TotalReceivedDetectPacketsNum uint64 `json:",omitempty"`
 	//TotalNewDetectInfoNum             uint64
 	//TotalReleaseDetectInfoNum         uint64
-	TotalFailedDetectEthernetLayerNum uint64     `json:",omitempty"`
-	TotalFailedDetectNetworkLayerNum  uint64     `json:",omitempty"`
-	TotalNoNetworkLayerHandlerErrNum  uint64     `json:",omitempty"`
-	ErrHandlerFastDetectStats         ErrorStats `json:",omitempty"`
 	TotalFailedDetectEthernetLayerNum uint64     `json:",omitempty"`
 	TotalFailedDetectNetworkLayerNum  uint64     `json:",omitempty"`
 	TotalNoNetworkLayerHandlerErrNum  uint64     `json:",omitempty"`
