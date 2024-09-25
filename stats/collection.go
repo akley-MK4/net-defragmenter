@@ -1,8 +1,9 @@
 package stats
 
 import (
-	def "github.com/akley-MK4/net-defragmenter/definition"
 	"sync/atomic"
+
+	def "github.com/akley-MK4/net-defragmenter/definition"
 )
 
 type CollectionStats struct {
@@ -22,13 +23,13 @@ type CollectionStats struct {
 	TotalReleasedFragElementGroupsNum        uint64 `json:",omitempty"`
 	TotalReleasedExpiredFragElementGroupsNum uint64 `json:",omitempty"`
 
-	ErrorHandlerCollectStats         ErrorStats `json:",omitempty"`
-	TotalSuccessfulCollectedFragsNum uint64     `json:",omitempty"`
+	ErrorHandlerCollectStats ErrorStats `json:",omitempty"`
+	TotalCollectedFragsNum   uint64     `json:",omitempty"`
 
 	TotalReassemblyNoDelFragGroupsNum uint64     `json:",omitempty"`
 	ErrHandlerReassemblyStats         ErrorStats `json:",omitempty"`
-	TotalSuccessfulReassemblyFragsNum uint64     `json:",omitempty"`
-	TotalPushedFullPacketsNum         uint64     `json:",omitempty"`
+	TotalReassemblyFragsNum           uint64     `json:",omitempty"`
+	TotalReassemblyFullPacketsNum     uint64     `json:",omitempty"`
 	TotalReleasedFullPacketsNum       uint64     `json:",omitempty"`
 	TotalForceReleasedFullPacketsNum  uint64     `json:",omitempty"`
 	TotalPoppedFullPacketsNum         uint64     `json:",omitempty"`
@@ -149,18 +150,18 @@ func (t *CollectionStatsHandler) AddTotalReassemblyNoDelFragGroupsNum(delta uint
 	atomic.AddUint64(&t.stats.TotalReassemblyNoDelFragGroupsNum, delta)
 }
 
-func (t *CollectionStatsHandler) AddTotalSuccessfulReassemblyFragsNum(delta uint64) {
+func (t *CollectionStatsHandler) AddTotalReassemblyFragsNum(delta uint64) {
 	if !enabledStats {
 		return
 	}
-	atomic.AddUint64(&t.stats.TotalSuccessfulReassemblyFragsNum, delta)
+	atomic.AddUint64(&t.stats.TotalReassemblyFragsNum, delta)
 }
 
-func (t *CollectionStatsHandler) AddTotalPushedFullPacketsNum(delta uint64) {
+func (t *CollectionStatsHandler) AddTotalReassemblyFullPacketsNum(delta uint64) {
 	if !enabledStats {
 		return
 	}
-	atomic.AddUint64(&t.stats.TotalPushedFullPacketsNum, delta)
+	atomic.AddUint64(&t.stats.TotalReassemblyFullPacketsNum, delta)
 }
 
 func (t *CollectionStatsHandler) AddTotalForceReleasedFullPacketsNum(delta uint64) {
@@ -184,9 +185,9 @@ func (t *CollectionStatsHandler) AddTotalPoppedFullPacketsNum(delta uint64) {
 	atomic.AddUint64(&t.stats.TotalPoppedFullPacketsNum, delta)
 }
 
-func (t *CollectionStatsHandler) AddTotalSuccessfulCollectedFragsNum(delta uint64) {
+func (t *CollectionStatsHandler) AddTotalCollectedFragsNum(delta uint64) {
 	if !enabledStats {
 		return
 	}
-	atomic.AddUint64(&t.stats.TotalSuccessfulCollectedFragsNum, delta)
+	atomic.AddUint64(&t.stats.TotalCollectedFragsNum, delta)
 }

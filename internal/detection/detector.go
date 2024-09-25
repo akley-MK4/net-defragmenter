@@ -2,11 +2,12 @@ package detection
 
 import (
 	"errors"
+	"strconv"
+	"strings"
+
 	def "github.com/akley-MK4/net-defragmenter/definition"
 	"github.com/akley-MK4/net-defragmenter/stats"
 	"github.com/google/gopacket/layers"
-	"strconv"
-	"strings"
 )
 
 type Detector struct {
@@ -55,7 +56,7 @@ func (t *Detector) FastDetect(interfaceId def.InterfaceId, pktData []byte, reply
 			strconv.Itoa(int(replyDetectInfo.IPProtocol)),
 			strconv.Itoa(int(replyDetectInfo.Identification)),
 		}, "-"))
-		stats.GetDetectionStatsHandler().AddTotalSuccessfulDetectedFragsNum(1)
+		stats.GetDetectionStatsHandler().AddTotalDetectedFragsNum(1)
 		return nil
 	}
 

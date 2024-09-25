@@ -1,8 +1,9 @@
 package stats
 
 import (
-	def "github.com/akley-MK4/net-defragmenter/definition"
 	"sync/atomic"
+
+	def "github.com/akley-MK4/net-defragmenter/definition"
 )
 
 type DetectionStats struct {
@@ -14,7 +15,7 @@ type DetectionStats struct {
 	TotalNoNetworkLayerHandlerErrNum  uint64     `json:",omitempty"`
 	ErrHandlerFastDetectStats         ErrorStats `json:",omitempty"`
 
-	TotalSuccessfulDetectedFragsNum uint64 `json:",omitempty"`
+	TotalDetectedFragsNum uint64 `json:",omitempty"`
 }
 
 var (
@@ -68,11 +69,11 @@ func (t *DetectionStatsHandler) AddTotalFailedDetectNetworkLayerNum(delta uint64
 	atomic.AddUint64(&t.stats.TotalFailedDetectNetworkLayerNum, delta)
 }
 
-func (t *DetectionStatsHandler) AddTotalSuccessfulDetectedFragsNum(delta uint64) {
+func (t *DetectionStatsHandler) AddTotalDetectedFragsNum(delta uint64) {
 	if !enabledStats {
 		return
 	}
-	atomic.AddUint64(&t.stats.TotalSuccessfulDetectedFragsNum, delta)
+	atomic.AddUint64(&t.stats.TotalDetectedFragsNum, delta)
 }
 
 func (t *DetectionStatsHandler) AddTotalNoNetworkLayerHandlerErrNum(delta uint64) {

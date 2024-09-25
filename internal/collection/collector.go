@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	def "github.com/akley-MK4/net-defragmenter/definition"
@@ -19,7 +20,7 @@ var (
 	ErrFragGroupMapReachedLenLimit = errors.New("reached the maximum length limit")
 )
 
-func newCollector(id, maxListenChanCap, maxFragGroupMapLength uint32, ptrFullPktQueue *linkqueue.LinkQueue) *Collector {
+func newCollector(id, maxListenChanCap, maxFragGroupMapLength uint32, ptrFullPktQueue *linkqueue.LinkQueue, enableSyncReassembly bool) *Collector {
 
 	cancelCtx, cancelFunc := context.WithCancel(context.Background())
 	return &Collector{
@@ -31,6 +32,7 @@ func newCollector(id, maxListenChanCap, maxFragGroupMapLength uint32, ptrFullPkt
 		maxFragGroupMapLength: int(maxFragGroupMapLength),
 		ptrFullPktQueue:       ptrFullPktQueue,
 		sharedLayers:          common.NewSharedLayers(),
+		enableSyncReassembly:  enableSyncReassembly,
 	}
 }
 
@@ -44,6 +46,9 @@ type Collector struct {
 	maxFragGroupMapLength int
 	ptrFullPktQueue       *linkqueue.LinkQueue
 	sharedLayers          *common.SharedLayers
+
+	enableSyncReassembly bool
+	syncReassemblyMutex  sync.RWMutex
 }
 
 func (t *Collector) start() error {
@@ -70,20 +75,17 @@ loopExit:
 		select {
 		case <-fragSetCheckTimer.C:
 			t.checkFragmentElementSetExpired()
-			break
 		case <-sharedLayersRestTimer.C:
 			if t.sharedLayers.GetReferencesNum() > 0 {
 				t.sharedLayers.Reset()
 			}
-			break
 		case frag, ok := <-t.fragmentChan:
 			if !ok {
 				break loopExit
 			}
-			if err := t.accept(frag); err != nil {
+			if _, err := t.accept(frag); err != nil {
 				// todo
 			}
-			break
 		case <-t.cancelCtx.Done():
 			break loopExit
 		}
@@ -98,15 +100,23 @@ loopExit:
 func (t *Collector) checkFragmentElementSetExpired() {
 	nowTp := time.Now().Unix()
 	var expiredGroups []*common.FragElementGroup
+
+	if t.enableSyncReassembly {
+		t.syncReassemblyMutex.Lock()
+	}
+
 	for _, fragElemGroup := range t.fragElemGroupMap {
 		if (nowTp - fragElemGroup.GetCreateTimestamp()) > maxFragGroupDurationSec {
 			expiredGroups = append(expiredGroups, fragElemGroup)
 		}
 	}
-
 	for _, fragElemGroup := range expiredGroups {
 		delete(t.fragElemGroupMap, fragElemGroup.GetID())
 		fragElemGroup.Release()
+	}
+
+	if t.enableSyncReassembly {
+		t.syncReassemblyMutex.Unlock()
 	}
 
 	if len(expiredGroups) > 0 {
@@ -114,7 +124,7 @@ func (t *Collector) checkFragmentElementSetExpired() {
 	}
 }
 
-func (t *Collector) accept(fragElem *common.FragElement) error {
+func (t *Collector) accept(fragElem *common.FragElement) (*def.FullPacket, error) {
 	statsHandler := stats.GetCollectionStatsHandler()
 	statsHandler.AddTotalAcceptedFragElementsNum(1)
 
@@ -122,46 +132,64 @@ func (t *Collector) accept(fragElem *common.FragElement) error {
 	if hd == nil {
 		common.RecycleFragElement(fragElem)
 		statsHandler.AddTotalNotFoundHandlersNum(1)
-		return fmt.Errorf("handler with fragment type %v dose not exists", fragElem.Type)
+		return nil, fmt.Errorf("handler with fragment type %v dose not exists", fragElem.Type)
 	}
 
+	if t.enableSyncReassembly {
+		t.syncReassemblyMutex.Lock()
+	}
 	fragElemGroup, exist := t.fragElemGroupMap[fragElem.GroupID]
 	if !exist {
 		if len(t.fragElemGroupMap) >= t.maxFragGroupMapLength {
 			common.RecycleFragElement(fragElem)
 			statsHandler.IncTotalFragMapReachedLenLimitNum()
-			return ErrFragGroupMapReachedLenLimit
+			return nil, ErrFragGroupMapReachedLenLimit
 		}
 
 		t.fragElemGroupMap[fragElem.GroupID] = common.NewFragElementGroup(fragElem.GroupID)
 		fragElemGroup = t.fragElemGroupMap[fragElem.GroupID]
+	}
+	if t.enableSyncReassembly {
+		t.syncReassemblyMutex.Unlock()
 	}
 
 	collectErr, collectErrType := hd.Collect(fragElem, fragElemGroup)
 	if collectErr != nil {
 		common.RecycleFragElement(fragElem)
 		statsHandler.AddTotalErrCollectNum(1, collectErrType)
-		return collectErr
+		return nil, collectErr
 	}
 
-	statsHandler.AddTotalSuccessfulCollectedFragsNum(1)
-	if err := t.checkAndReassembly(fragElemGroup, fragElem, hd); err != nil {
-		return err
+	statsHandler.AddTotalCollectedFragsNum(1)
+	var sharedLayers *common.SharedLayers = nil
+	if t.enableSyncReassembly {
+		sharedLayers = common.NewSharedLayers()
+	} else {
+		sharedLayers = t.sharedLayers
 	}
 
-	return nil
+	return t.checkAndReassembly(fragElemGroup, fragElem, hd, sharedLayers)
 }
 
-func (t *Collector) checkAndReassembly(fragElemGroup *common.FragElementGroup, fragElem *common.FragElement, hd handler.IHandler) error {
+func (t *Collector) checkAndReassembly(fragElemGroup *common.FragElementGroup, fragElem *common.FragElement, hd handler.IHandler,
+	sharedLayers *common.SharedLayers) (*def.FullPacket, error) {
+
 	if !fragElemGroup.CheckFinalElementExists() || fragElemGroup.GetHighest() != fragElemGroup.GetCurrentLen() {
-		return nil
+		return nil, nil
 	}
 
 	statsHandler := stats.GetCollectionStatsHandler()
+
+	if t.enableSyncReassembly {
+		t.syncReassemblyMutex.Lock()
+	}
 	if _, exist := t.fragElemGroupMap[fragElemGroup.GetID()]; exist {
 		delete(t.fragElemGroupMap, fragElemGroup.GetID())
 	} else {
 		statsHandler.AddTotalReassemblyNoDelFragGroupsNum(1)
+	}
+	if t.enableSyncReassembly {
+		t.syncReassemblyMutex.Unlock()
 	}
 
 	fragElemListLen := fragElemGroup.GetElementListLen()
@@ -169,16 +197,31 @@ func (t *Collector) checkAndReassembly(fragElemGroup *common.FragElementGroup, f
 		fragElemGroup.Release()
 	}()
 
-	pkt, reassemblyErr, errType := hd.Reassembly(fragElemGroup, t.sharedLayers)
-	t.sharedLayers.UpdateReferences()
+	pkt, reassemblyErr, errType := hd.Reassembly(fragElemGroup, sharedLayers)
+	if t.enableSyncReassembly {
+		sharedLayers.Reset()
+	} else {
+		sharedLayers.UpdateReferences()
+	}
 
 	if reassemblyErr != nil {
 		statsHandler.AddTotalErrReassemblyNum(1, errType)
-		return reassemblyErr
+		return nil, reassemblyErr
 	}
-	statsHandler.AddTotalSuccessfulReassemblyFragsNum(uint64(fragElemListLen))
+	statsHandler.AddTotalReassemblyFragsNum(uint64(fragElemListLen))
 
-	statsHandler.AddTotalPushedFullPacketsNum(1)
+	statsHandler.AddTotalReassemblyFullPacketsNum(1)
+	fullPkt := &def.FullPacket{
+		InterfaceId:  fragElem.InterfaceId,
+		FragGroupID:  fragElem.GroupID,
+		Pkt:          pkt,
+		FragElemsNum: fragElemListLen,
+	}
+
+	if t.enableSyncReassembly {
+		return fullPkt, nil
+	}
+
 	t.ptrFullPktQueue.SafetyPutValue(&def.FullPacket{
 		InterfaceId:  fragElem.InterfaceId,
 		FragGroupID:  fragElem.GroupID,
@@ -186,7 +229,7 @@ func (t *Collector) checkAndReassembly(fragElemGroup *common.FragElementGroup, f
 		FragElemsNum: fragElemListLen,
 	})
 
-	return nil
+	return nil, nil
 }
 
 func (t *Collector) pushFragmentElement(fragElem *common.FragElement) {

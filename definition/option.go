@@ -25,6 +25,7 @@ type CollectorOption struct {
 	MaxFragGroupMapLength       uint32
 	MaxFullPktQueueLen          uint32
 	MaxFragGroupDurationSeconds int64
+	EnableSyncReassembly        bool
 }
 
 type StatsOption struct {

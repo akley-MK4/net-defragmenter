@@ -2,15 +2,16 @@ package collection
 
 import (
 	"errors"
+	"hash/crc32"
+	"sync/atomic"
+	"time"
+
 	def "github.com/akley-MK4/net-defragmenter/definition"
 	"github.com/akley-MK4/net-defragmenter/internal/common"
 	"github.com/akley-MK4/net-defragmenter/internal/linkqueue"
 	"github.com/akley-MK4/net-defragmenter/stats"
 	PCD "github.com/akley-MK4/pep-coroutine/define"
 	PCI "github.com/akley-MK4/pep-coroutine/implement"
-	"hash/crc32"
-	"sync/atomic"
-	"time"
 )
 
 const (
@@ -45,23 +46,25 @@ func NewCollectorMgr(opt def.CollectorOption) (*CollectorMgr, error) {
 	fullPktQueue := linkqueue.NewLinkQueue()
 	collectors := make([]*Collector, 0, opt.MaxCollectorsNum)
 	for i := 0; i < int(opt.MaxCollectorsNum); i++ {
-		collectors = append(collectors, newCollector(uint32(i), opt.MaxChannelCap, opt.MaxFragGroupMapLength, fullPktQueue))
+		collectors = append(collectors, newCollector(uint32(i), opt.MaxChannelCap, opt.MaxFragGroupMapLength, fullPktQueue, opt.EnableSyncReassembly))
 	}
 
 	mgr := &CollectorMgr{
-		status:             def.InitializedStatus,
-		collectors:         collectors,
-		fullPktQueue:       fullPktQueue,
-		maxFullPktQueueLen: opt.MaxFullPktQueueLen,
+		status:               def.InitializedStatus,
+		collectors:           collectors,
+		fullPktQueue:         fullPktQueue,
+		maxFullPktQueueLen:   opt.MaxFullPktQueueLen,
+		enableSyncReassembly: opt.EnableSyncReassembly,
 	}
 	return mgr, nil
 }
 
 type CollectorMgr struct {
-	status             int32
-	maxFullPktQueueLen uint32
-	collectors         []*Collector
-	fullPktQueue       *linkqueue.LinkQueue
+	status               int32
+	maxFullPktQueueLen   uint32
+	collectors           []*Collector
+	fullPktQueue         *linkqueue.LinkQueue
+	enableSyncReassembly bool
 }
 
 func (t *CollectorMgr) Start() error {
@@ -95,7 +98,11 @@ func (t *CollectorMgr) Stop() {
 	}
 }
 
-func (t *CollectorMgr) Collect(detectInfo *def.DetectionInfo) error {
+func (t *CollectorMgr) AsyncCollect(detectInfo *def.DetectionInfo) error {
+	if t.enableSyncReassembly {
+		return errors.New("synchronized reassembly enabled, unable to use this function")
+	}
+
 	statsHandler := stats.GetCollectionStatsHandler()
 	collectorsLen := len(t.collectors)
 	if collectorsLen <= 0 {
@@ -112,6 +119,27 @@ func (t *CollectorMgr) Collect(detectInfo *def.DetectionInfo) error {
 	collector.pushFragmentElement(fragElem)
 
 	return nil
+}
+
+func (t *CollectorMgr) SyncCollectAndReassembly(detectInfo *def.DetectionInfo) (*def.FullPacket, error) {
+	if !t.enableSyncReassembly {
+		return nil, errors.New("synchronized reassembly disabled, unable to use this function")
+	}
+
+	statsHandler := stats.GetCollectionStatsHandler()
+	collectorsLen := len(t.collectors)
+	if collectorsLen <= 0 {
+		statsHandler.AddTotalFailedDistributionMemberNum(1)
+		return nil, errors.New("no collector")
+	}
+
+	fragElem := common.NewFragElement()
+	setFragElement(fragElem, detectInfo)
+
+	hashVal := crc32.ChecksumIEEE([]byte(detectInfo.FragGroupId))
+	idx := hashVal % uint32(collectorsLen)
+	collector := t.collectors[idx]
+	return collector.accept(fragElem)
 }
 
 func (t *CollectorMgr) checkFullPktQueueCapacityPeriodically() {

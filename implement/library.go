@@ -3,12 +3,13 @@ package implement
 import (
 	"errors"
 	"fmt"
+	"runtime/debug"
+	"sync/atomic"
+
 	def "github.com/akley-MK4/net-defragmenter/definition"
 	"github.com/akley-MK4/net-defragmenter/internal/collection"
 	"github.com/akley-MK4/net-defragmenter/internal/detection"
 	"github.com/akley-MK4/net-defragmenter/stats"
-	"runtime/debug"
-	"sync/atomic"
 )
 
 func NewLibraryInstance(opt *def.Option) (*Library, error) {
@@ -103,7 +104,7 @@ func (t *Library) AsyncProcessPacket(interfaceId def.InterfaceId, pktData []byte
 
 	onDetectCompleted(detectInfo.FragType, detectInfo.FragGroupId)
 
-	if err := t.collectorMgr.Collect(&detectInfo); err != nil {
+	if err := t.collectorMgr.AsyncCollect(&detectInfo); err != nil {
 		return
 	}
 
@@ -134,7 +135,7 @@ func (t *Library) FastDetect(interfaceId def.InterfaceId, pktData []byte, replyD
 	return t.detector.FastDetect(interfaceId, pktData, replyDetectInfo)
 }
 
-func (t *Library) Collect(detectInfo *def.DetectionInfo) error {
+func (t *Library) AsyncCollect(detectInfo *def.DetectionInfo) error {
 	if t.status != def.StartedStatus {
 		return fmt.Errorf("manager not started, current status is %v", t.status)
 	}
@@ -149,7 +150,25 @@ func (t *Library) Collect(detectInfo *def.DetectionInfo) error {
 		return errors.New("the InterfaceId of the detectInfo is 0")
 	}
 
-	return t.collectorMgr.Collect(detectInfo)
+	return t.collectorMgr.AsyncCollect(detectInfo)
+}
+
+func (t *Library) SyncCollectAndReassembly(detectInfo *def.DetectionInfo) (*def.FullPacket, error) {
+	if t.status != def.StartedStatus {
+		return nil, fmt.Errorf("manager not started, current status is %v", t.status)
+	}
+	if detectInfo == nil {
+		return nil, errors.New("the detectInfo is a nil value")
+	}
+
+	if detectInfo.FragGroupId == "" {
+		return nil, errors.New("the FragGroupId of the detectInfo is not generated")
+	}
+	if detectInfo.InterfaceId == 0 {
+		return nil, errors.New("the InterfaceId of the detectInfo is 0")
+	}
+
+	return t.collectorMgr.SyncCollectAndReassembly(detectInfo)
 }
 
 func ReleaseFullPacket(fullPkt *def.FullPacket) {
