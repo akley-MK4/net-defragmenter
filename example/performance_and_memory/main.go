@@ -22,8 +22,8 @@ func main() {
 	runtime.GOMAXPROCS(availableNumCPU)
 	log.Printf("The current number of logical CPUs available for the process is %d\n", availableNumCPU)
 
-	asyncTest(*pcapFilePath)
-	//syncTest(*pcapFilePath)
+	//asyncTest(*pcapFilePath)
+	syncTest(*pcapFilePath)
 
 	os.Exit(0)
 }
@@ -39,6 +39,7 @@ func asyncTest(pcapFilePath string) {
 		opt.CollectorOption.MaxChannelCap = 2000
 		opt.CollectorOption.MaxFullPktQueueLen = 10000
 		opt.CollectorOption.MaxFragGroupDurationSeconds = 15
+		opt.CollectorOption.MaxFragGroupMapLength = 100
 	}
 
 	if err := initLibInstance(fn); err != nil {
@@ -137,6 +138,7 @@ func syncTest(pcapFilePath string) {
 		opt.CollectorOption.MaxFullPktQueueLen = 10000
 		opt.CollectorOption.MaxFragGroupDurationSeconds = 15
 		opt.CollectorOption.EnableSyncReassembly = true
+		opt.CollectorOption.MaxFragGroupMapLength = 100
 	}
 
 	if err := initLibInstance(fn); err != nil {
